@@ -1,0 +1,1574 @@
+openapi: 3.0.3
+info:
+  title: Debt Management System API
+  description: >
+    Автоматизированная система управления дебиторской задолженностью
+    с модулем омниканальных уведомлений (SMS / WhatsApp / Telegram / Email).
+  version: 1.0.0
+  contact:
+    name: Dev Team
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+  - url: https://api.debtmanager.example.com/v1
+    description: Production
+
+tags:
+  - name: Auth
+    description: Аутентификация и управление токенами
+  - name: Users
+    description: Пользователи системы
+  - name: Roles
+    description: Роли и права доступа
+  - name: Debtors
+    description: Должники
+  - name: DebtCases
+    description: Дела о задолженности
+  - name: Notifications
+    description: Шаблоны и логи уведомлений
+  - name: Scheduler
+    description: Запланированные задачи рассылки
+  - name: PTP
+    description: Обещания об оплате (Promise to Pay)
+  - name: Reports
+    description: Аналитика и отчёты
+  - name: Integrations
+    description: Конфигурация внешних каналов
+
+# ─────────────────────────────────────────
+# PATHS
+# ─────────────────────────────────────────
+paths:
+
+  # ── AUTH ──────────────────────────────
+  /auth/login/:
+    post:
+      tags: [Auth]
+      summary: Получить JWT-токены
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: agent_ivanov
+                password:
+                  type: string
+                  format: password
+                  example: "s3cr3t"
+      responses:
+        "200":
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPair"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/refresh/:
+    post:
+      tags: [Auth]
+      summary: Обновить access-токен
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh]
+              properties:
+                refresh:
+                  type: string
+      responses:
+        "200":
+          description: Новый access-токен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/logout/:
+    post:
+      tags: [Auth]
+      summary: Инвалидировать refresh-токен
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh]
+              properties:
+                refresh:
+                  type: string
+      responses:
+        "204":
+          description: Выход выполнен
+
+  # ── USERS ─────────────────────────────
+  /users/:
+    get:
+      tags: [Users]
+      summary: Список пользователей
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+      responses:
+        "200":
+          description: Пагинированный список
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedUsers"
+    post:
+      tags: [Users]
+      summary: Создать пользователя
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      responses:
+        "201":
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /users/{id}/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    get:
+      tags: [Users]
+      summary: Получить пользователя
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+          description: OK
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Users]
+      summary: Частично обновить пользователя
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Обновлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      tags: [Users]
+      summary: Удалить пользователя
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Удалено
+
+  # ── ROLES ─────────────────────────────
+  /roles/:
+    get:
+      tags: [Roles]
+      summary: Список ролей
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+    post:
+      tags: [Roles]
+      summary: Создать роль
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleCreate"
+      responses:
+        "201":
+          description: Роль создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Role"
+
+  /roles/{id}/permissions/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    put:
+      tags: [Roles]
+      summary: Назначить права роли (полная замена)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permission_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        "200":
+          description: Права обновлены
+
+  /users/{id}/roles/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    put:
+      tags: [Roles]
+      summary: Назначить роли пользователю
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        "200":
+          description: Роли назначены
+
+  # ── DEBTORS ───────────────────────────
+  /debtors/:
+    get:
+      tags: [Debtors]
+      summary: Список должников
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Поиск по ФИО или телефону
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedDebtors"
+    post:
+      tags: [Debtors]
+      summary: Создать должника
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtorCreate"
+      responses:
+        "201":
+          description: Создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Debtor"
+
+  /debtors/import/:
+    post:
+      tags: [Debtors]
+      summary: Массовый импорт из CSV/Excel
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "202":
+          description: Импорт принят в очередь
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                  message:
+                    type: string
+                    example: "Import queued. 120 rows detected."
+
+  /debtors/{id}/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    get:
+      tags: [Debtors]
+      summary: Получить должника
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Debtor"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Debtors]
+      summary: Обновить данные должника
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtorUpdate"
+      responses:
+        "200":
+          description: Обновлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Debtor"
+    delete:
+      tags: [Debtors]
+      summary: Удалить должника
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Удалено
+
+  # ── DEBT CASES ────────────────────────
+  /debt-cases/:
+    get:
+      tags: [DebtCases]
+      summary: Список дел о задолженности
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [new, in_progress, promised, closed, overdue]
+        - name: dpd_min
+          in: query
+          schema:
+            type: integer
+          description: Фильтр по минимальному DPD
+        - name: dpd_max
+          in: query
+          schema:
+            type: integer
+        - name: assigned_agent_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedDebtCases"
+    post:
+      tags: [DebtCases]
+      summary: Создать дело
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtCaseCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtCase"
+
+  /debt-cases/{id}/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    get:
+      tags: [DebtCases]
+      summary: Получить дело
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtCase"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [DebtCases]
+      summary: Обновить дело (статус, агент)
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtCaseUpdate"
+      responses:
+        "200":
+          description: Обновлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DebtCase"
+
+  /debt-cases/{id}/dpd-history/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    get:
+      tags: [DebtCases]
+      summary: История DPD по делу
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DPDSnapshot"
+
+  # ── NOTIFICATIONS ─────────────────────
+  /notification-templates/:
+    get:
+      tags: [Notifications]
+      summary: Список шаблонов
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [whatsapp, sms, telegram, email]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NotificationTemplate"
+    post:
+      tags: [Notifications]
+      summary: Создать шаблон
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationTemplateCreate"
+      responses:
+        "201":
+          description: Создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTemplate"
+
+  /notification-templates/{id}/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    get:
+      tags: [Notifications]
+      summary: Получить шаблон
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTemplate"
+    patch:
+      tags: [Notifications]
+      summary: Обновить шаблон
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationTemplateCreate"
+      responses:
+        "200":
+          description: Обновлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationTemplate"
+    delete:
+      tags: [Notifications]
+      summary: Удалить шаблон
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Удалено
+
+  /notifications/send/:
+    post:
+      tags: [Notifications]
+      summary: Ручная отправка уведомления
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [debt_case_id, template_id, channel]
+              properties:
+                debt_case_id:
+                  type: string
+                  format: uuid
+                template_id:
+                  type: string
+                  format: uuid
+                channel:
+                  type: string
+                  enum: [whatsapp, sms, telegram, email]
+      responses:
+        "202":
+          description: Уведомление поставлено в очередь
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  log_id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: queued
+
+  /notifications/logs/:
+    get:
+      tags: [Notifications]
+      summary: Лог отправленных уведомлений
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: debt_case_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [whatsapp, sms, telegram, email]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [queued, sent, delivered, failed]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedNotificationLogs"
+
+  # ── SCHEDULER ─────────────────────────
+  /scheduled-tasks/:
+    get:
+      tags: [Scheduler]
+      summary: Список запланированных задач
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: task_status
+          in: query
+          schema:
+            type: string
+            enum: [pending, sent, cancelled, failed]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedScheduledTasks"
+    post:
+      tags: [Scheduler]
+      summary: Создать задачу рассылки
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledTaskCreate"
+      responses:
+        "201":
+          description: Задача создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledTask"
+
+  /scheduled-tasks/{id}/cancel/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    post:
+      tags: [Scheduler]
+      summary: Отменить задачу
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Задача отменена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: cancelled
+
+  # ── PTP ───────────────────────────────
+  /ptp/:
+    get:
+      tags: [PTP]
+      summary: Список обещаний об оплате
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, kept, broken]
+        - name: debt_case_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedPTPRecords"
+    post:
+      tags: [PTP]
+      summary: Зафиксировать обещание об оплате
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PTPCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PTPRecord"
+
+  /ptp/{id}/status/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    patch:
+      tags: [PTP]
+      summary: Обновить статус PTP
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [kept, broken]
+                note:
+                  type: string
+      responses:
+        "200":
+          description: Статус обновлён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PTPRecord"
+
+  # ── REPORTS ───────────────────────────
+  /reports/campaign/:
+    get:
+      tags: [Reports]
+      summary: Отчёт по кампаниям рассылки
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: date_from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2025-05-01"
+        - name: date_to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          example: "2025-05-31"
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [whatsapp, sms, telegram, email, all]
+            default: all
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CampaignReport"
+
+  /reports/agent-activity/:
+    get:
+      tags: [Reports]
+      summary: Лог активности агентов
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/PageSizeParam"
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedAgentActivityLogs"
+
+  /reports/summary/:
+    get:
+      tags: [Reports]
+      summary: Сводная статистика (dashboard)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  # ── INTEGRATIONS ──────────────────────
+  /integrations/:
+    get:
+      tags: [Integrations]
+      summary: Список конфигураций каналов
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IntegrationConfig"
+    post:
+      tags: [Integrations]
+      summary: Добавить конфигурацию канала
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegrationConfigCreate"
+      responses:
+        "201":
+          description: Создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationConfig"
+
+  /integrations/{id}/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    patch:
+      tags: [Integrations]
+      summary: Обновить конфигурацию
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegrationConfigCreate"
+      responses:
+        "200":
+          description: Обновлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationConfig"
+    delete:
+      tags: [Integrations]
+      summary: Удалить конфигурацию
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Удалено
+
+  /integrations/{id}/test/:
+    parameters:
+      - $ref: "#/components/parameters/UUIDParam"
+    post:
+      tags: [Integrations]
+      summary: Тест соединения с каналом
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Результат теста
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: "Connection to WhatsApp Ch2D OK"
+
+# ─────────────────────────────────────────
+# COMPONENTS
+# ─────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UUIDParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+    PageSizeParam:
+      name: page_size
+      in: query
+      schema:
+        type: integer
+        default: 20
+        maximum: 100
+
+  responses:
+    Unauthorized:
+      description: Не аутентифицирован
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Объект не найден
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    BadRequest:
+      description: Ошибка валидации
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Not found."
+
+    TokenPair:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+
+    # ── USER ──
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+        created_at:
+          type: string
+          format: date-time
+
+    UserCreate:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        role_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    UserUpdate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    PaginatedUsers:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/User"
+
+    # ── ROLE ──
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: agent
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Permission"
+
+    RoleCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    Permission:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        codename:
+          type: string
+          example: can_send_notification
+        description:
+          type: string
+
+    # ── DEBTOR ──
+    Debtor:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        full_name:
+          type: string
+          example: Иванов Иван Иванович
+        phone:
+          type: string
+          example: "+996700123456"
+        email:
+          type: string
+          format: email
+          nullable: true
+        whatsapp_number:
+          type: string
+          nullable: true
+        telegram_id:
+          type: string
+          nullable: true
+
+    DebtorCreate:
+      type: object
+      required: [full_name, phone]
+      properties:
+        full_name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        whatsapp_number:
+          type: string
+        telegram_id:
+          type: string
+
+    DebtorUpdate:
+      type: object
+      properties:
+        full_name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          format: email
+        whatsapp_number:
+          type: string
+        telegram_id:
+          type: string
+
+    PaginatedDebtors:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/Debtor"
+
+    # ── DEBT CASE ──
+    DebtCase:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debtor:
+          $ref: "#/components/schemas/Debtor"
+        assigned_agent:
+          $ref: "#/components/schemas/User"
+          nullable: true
+        amount:
+          type: number
+          format: float
+          example: 15000.00
+        due_date:
+          type: string
+          format: date
+        dpd:
+          type: integer
+          description: Days Past Due
+          example: 7
+        status:
+          type: string
+          enum: [new, in_progress, promised, closed, overdue]
+        created_at:
+          type: string
+          format: date-time
+
+    DebtCaseCreate:
+      type: object
+      required: [debtor_id, amount, due_date]
+      properties:
+        debtor_id:
+          type: string
+          format: uuid
+        assigned_agent_id:
+          type: string
+          format: uuid
+          nullable: true
+        amount:
+          type: number
+          format: float
+        due_date:
+          type: string
+          format: date
+
+    DebtCaseUpdate:
+      type: object
+      properties:
+        assigned_agent_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          type: string
+          enum: [new, in_progress, promised, closed, overdue]
+
+    DPDSnapshot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debt_case_id:
+          type: string
+          format: uuid
+        dpd_value:
+          type: integer
+        snapshot_date:
+          type: string
+          format: date
+
+    PaginatedDebtCases:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/DebtCase"
+
+    # ── NOTIFICATION TEMPLATE ──
+    NotificationTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Напоминание DPD 1-7 дней"
+        channel:
+          type: string
+          enum: [whatsapp, sms, telegram, email]
+        body:
+          type: string
+          example: "Уважаемый {{full_name}}, у вас задолженность {{amount}} сом. Пожалуйста, оплатите до {{due_date}}."
+        language:
+          type: string
+          example: ru
+
+    NotificationTemplateCreate:
+      type: object
+      required: [name, channel, body]
+      properties:
+        name:
+          type: string
+        channel:
+          type: string
+          enum: [whatsapp, sms, telegram, email]
+        body:
+          type: string
+        language:
+          type: string
+          default: ru
+
+    NotificationLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debt_case_id:
+          type: string
+          format: uuid
+        template:
+          $ref: "#/components/schemas/NotificationTemplate"
+        channel:
+          type: string
+        status:
+          type: string
+          enum: [queued, sent, delivered, failed]
+        sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        response_raw:
+          type: string
+          nullable: true
+          description: Сырой ответ от провайдера
+
+    PaginatedNotificationLogs:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/NotificationLog"
+
+    # ── SCHEDULER ──
+    ScheduledTask:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debt_case_id:
+          type: string
+          format: uuid
+        template:
+          $ref: "#/components/schemas/NotificationTemplate"
+        channel:
+          type: string
+          enum: [whatsapp, sms, telegram, email]
+        scheduled_at:
+          type: string
+          format: date-time
+        task_status:
+          type: string
+          enum: [pending, sent, cancelled, failed]
+
+    ScheduledTaskCreate:
+      type: object
+      required: [debt_case_id, template_id, channel, scheduled_at]
+      properties:
+        debt_case_id:
+          type: string
+          format: uuid
+        template_id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+          enum: [whatsapp, sms, telegram, email]
+        scheduled_at:
+          type: string
+          format: date-time
+
+    PaginatedScheduledTasks:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/ScheduledTask"
+
+    # ── PTP ──
+    PTPRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        debt_case_id:
+          type: string
+          format: uuid
+        agent:
+          $ref: "#/components/schemas/User"
+        promise_date:
+          type: string
+          format: date
+        promised_amount:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [pending, kept, broken]
+        created_at:
+          type: string
+          format: date-time
+
+    PTPCreate:
+      type: object
+      required: [debt_case_id, promise_date, promised_amount]
+      properties:
+        debt_case_id:
+          type: string
+          format: uuid
+        promise_date:
+          type: string
+          format: date
+        promised_amount:
+          type: number
+          format: float
+
+    PaginatedPTPRecords:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/PTPRecord"
+
+    # ── REPORTS ──
+    CampaignReport:
+      type: object
+      properties:
+        report_date:
+          type: string
+          format: date
+        channel:
+          type: string
+        total_sent:
+          type: integer
+        total_delivered:
+          type: integer
+        total_ptp:
+          type: integer
+        collected_amount:
+          type: number
+          format: float
+
+    AgentActivityLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        agent:
+          $ref: "#/components/schemas/User"
+        debt_case_id:
+          type: string
+          format: uuid
+        action_type:
+          type: string
+          example: manual_notification_sent
+        performed_at:
+          type: string
+          format: date-time
+        note:
+          type: string
+          nullable: true
+
+    PaginatedAgentActivityLogs:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: "#/components/schemas/AgentActivityLog"
+
+    DashboardSummary:
+      type: object
+      properties:
+        total_open_cases:
+          type: integer
+        total_overdue_cases:
+          type: integer
+        total_amount_outstanding:
+          type: number
+          format: float
+        ptp_pending:
+          type: integer
+        ptp_kept_this_month:
+          type: integer
+        notifications_sent_today:
+          type: integer
+        collection_rate_percent:
+          type: number
+          format: float
+          example: 34.5
+
+    # ── INTEGRATIONS ──
+    IntegrationConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+          enum: [whatsapp, sms, telegram, email]
+        provider:
+          type: string
+          example: ch2d
+        webhook_url:
+          type: string
+          format: uri
+          nullable: true
+        is_active:
+          type: boolean
+
+    IntegrationConfigCreate:
+      type: object
+      required: [channel, provider, api_key]
+      properties:
+        channel:
+          type: string
+          enum: [whatsapp, sms, telegram, email]
+        provider:
+          type: string
+          example: ch2d
+        api_key:
+          type: string
+          format: password
+          writeOnly: true
+        webhook_url:
+          type: string
+          format: uri
+        is_active:
+          type: boolean
+          default: true
+
+    # ── SHARED ──
+    Pagination:
+      type: object
+      properties:
+        count:
+          type: integer
+          description: Всего объектов
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true

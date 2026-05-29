@@ -1,0 +1,577 @@
+{
+  "permissions": [
+    { "codename": "can_view_debtors",        "description": "View debtor list" },
+    { "codename": "can_manage_debtors",      "description": "Create/edit/delete debtors" },
+    { "codename": "can_send_notification",   "description": "Manually send notifications" },
+    { "codename": "can_view_reports",        "description": "View analytics and reports" },
+    { "codename": "can_manage_integrations", "description": "Manage channel integrations" },
+    { "codename": "can_manage_users",        "description": "Create and manage users" },
+    { "codename": "can_record_ptp",          "description": "Record promise-to-pay" },
+    { "codename": "can_manage_templates",    "description": "Create/edit notification templates" }
+  ],
+
+  "roles": [
+    {
+      "name": "admin",
+      "description": "Full system access",
+      "permissionCodes": [
+        "can_view_debtors", "can_manage_debtors", "can_send_notification",
+        "can_view_reports", "can_manage_integrations", "can_manage_users",
+        "can_record_ptp", "can_manage_templates"
+      ]
+    },
+    {
+      "name": "agent",
+      "description": "Front-line collection agent",
+      "permissionCodes": ["can_view_debtors", "can_send_notification", "can_record_ptp"]
+    },
+    {
+      "name": "supervisor",
+      "description": "Team lead — read analytics",
+      "permissionCodes": ["can_view_debtors", "can_view_reports", "can_record_ptp"]
+    }
+  ],
+
+  "users": [
+    { "username": "admin",             "email": "admin@debtmanager.local",      "password": "Admin1234!", "roleName": "admin" },
+    { "username": "agent_ivanov",      "email": "ivanov@debtmanager.local",     "password": "Agent1234!", "roleName": "agent" },
+    { "username": "supervisor_petrov", "email": "petrov@debtmanager.local",     "password": "Super1234!", "roleName": "supervisor" },
+    { "username": "agent_seitkali",    "email": "seitkali@debtmanager.local",   "password": "Agent1234!", "roleName": "agent" },
+    { "username": "agent_bakyt",       "email": "bakyt@debtmanager.local",      "password": "Agent1234!", "roleName": "agent" }
+  ],
+
+  "debtors": [
+    {
+      "fullName": "Абдыраков Максат Жакыпович",
+      "phone": "+996700123001",
+      "email": "abdyrakov@mail.ru",
+      "whatsappNumber": "+996700123001",
+      "telegramId": "@abdyrakov_m"
+    },
+    {
+      "fullName": "Алиева Гульнара Аскаровна",
+      "phone": "+996700123002",
+      "email": null,
+      "whatsappNumber": "+996700123002",
+      "telegramId": null
+    },
+    {
+      "fullName": "Бекова Айгуль Токтосунова",
+      "phone": "+996555123003",
+      "email": "bekova.aigul@gmail.com",
+      "whatsappNumber": null,
+      "telegramId": "@aigul_bekova"
+    },
+    {
+      "fullName": "Джумабеков Эрлан Маратович",
+      "phone": "+996700123004",
+      "email": null,
+      "whatsappNumber": "+996700123004",
+      "telegramId": null
+    },
+    {
+      "fullName": "Исакова Чинара Болотовна",
+      "phone": "+996555123005",
+      "email": "isakova.ch@inbox.ru",
+      "whatsappNumber": null,
+      "telegramId": null
+    },
+    {
+      "fullName": "Карымшаков Нурлан Сейткалиевич",
+      "phone": "+996700123006",
+      "email": null,
+      "whatsappNumber": "+996700123006",
+      "telegramId": "@nurlan_k"
+    },
+    {
+      "fullName": "Мамытбеков Алмаз Токтобаевич",
+      "phone": "+996700123007",
+      "email": "mamytbekov@mail.ru",
+      "whatsappNumber": "+996700123007",
+      "telegramId": null
+    },
+    {
+      "fullName": "Осмонова Салтанат Дүйшөевна",
+      "phone": "+996555123008",
+      "email": null,
+      "whatsappNumber": null,
+      "telegramId": "@saltanat_o"
+    },
+    {
+      "fullName": "Рысбаев Тилек Жаңылбаевич",
+      "phone": "+996700123009",
+      "email": "rysbayev.t@gmail.com",
+      "whatsappNumber": "+996700123009",
+      "telegramId": null
+    },
+    {
+      "fullName": "Сыдыкова Бурул Мурзабековна",
+      "phone": "+996555123010",
+      "email": "sydykova@mail.ru",
+      "whatsappNumber": null,
+      "telegramId": "@burul_s"
+    }
+  ],
+
+  "debt_cases": [
+    {
+      "debtorPhone": "+996700123001",
+      "agentUsername": "agent_ivanov",
+      "amount": 45000.00,
+      "dueDate": "2026-04-13",
+      "dpd": 45,
+      "status": "overdue"
+    },
+    {
+      "debtorPhone": "+996700123002",
+      "agentUsername": "agent_ivanov",
+      "amount": 120000.00,
+      "dueDate": "2026-05-16",
+      "dpd": 12,
+      "status": "in_progress"
+    },
+    {
+      "debtorPhone": "+996555123003",
+      "agentUsername": "agent_seitkali",
+      "amount": 15000.00,
+      "dueDate": "2026-05-20",
+      "dpd": 8,
+      "status": "promised"
+    },
+    {
+      "debtorPhone": "+996700123004",
+      "agentUsername": "agent_bakyt",
+      "amount": 75000.00,
+      "dueDate": "2026-05-25",
+      "dpd": 3,
+      "status": "new"
+    },
+    {
+      "debtorPhone": "+996555123005",
+      "agentUsername": "agent_seitkali",
+      "amount": 230000.00,
+      "dueDate": "2026-02-27",
+      "dpd": 90,
+      "status": "overdue"
+    },
+    {
+      "debtorPhone": "+996700123006",
+      "agentUsername": "agent_ivanov",
+      "amount": 8500.00,
+      "dueDate": "2026-03-28",
+      "dpd": 0,
+      "status": "closed"
+    },
+    {
+      "debtorPhone": "+996700123007",
+      "agentUsername": "agent_bakyt",
+      "amount": 55000.00,
+      "dueDate": "2026-05-03",
+      "dpd": 25,
+      "status": "in_progress"
+    },
+    {
+      "debtorPhone": "+996555123008",
+      "agentUsername": "agent_seitkali",
+      "amount": 18000.00,
+      "dueDate": "2026-05-27",
+      "dpd": 1,
+      "status": "new"
+    },
+    {
+      "debtorPhone": "+996700123009",
+      "agentUsername": "agent_ivanov",
+      "amount": 95000.00,
+      "dueDate": "2026-05-13",
+      "dpd": 15,
+      "status": "promised"
+    },
+    {
+      "debtorPhone": "+996555123010",
+      "agentUsername": "agent_bakyt",
+      "amount": 42000.00,
+      "dueDate": "2025-02-27",
+      "dpd": 60,
+      "status": "overdue"
+    }
+  ],
+
+  "notification_templates": [
+    {
+      "name": "SMS напоминание DPD 1–7",
+      "channel": "sms",
+      "body": "Уважаемый(ая) {{full_name}}, напоминаем о задолженности {{amount}} сом. Оплатите до {{due_date}}. Инфо: 0800-111-222.",
+      "language": "ru"
+    },
+    {
+      "name": "SMS финальное уведомление DPD 30+",
+      "channel": "sms",
+      "body": "ВНИМАНИЕ! {{full_name}}, задолженность {{amount}} сом, просрочка {{dpd}} дн. Срочно оплатите или обратитесь в офис: 0800-111-222.",
+      "language": "ru"
+    },
+    {
+      "name": "WhatsApp напоминание DPD 1–7",
+      "channel": "whatsapp",
+      "body": "Здравствуйте, {{full_name}}! 👋\n\nНапоминаем о задолженности:\n💰 Сумма: {{amount}} сом\n📅 Срок: {{due_date}}\n\nОплатите своевременно или ответьте на это сообщение.",
+      "language": "ru"
+    },
+    {
+      "name": "WhatsApp финальное уведомление",
+      "channel": "whatsapp",
+      "body": "⚠️ Уважаемый(ая) {{full_name}}!\n\nВаша задолженность {{amount}} сом просрочена на {{dpd}} дней.\n\nДля урегулирования: 0800-111-222 или ближайший офис.",
+      "language": "ru"
+    },
+    {
+      "name": "Email ежемесячная выписка",
+      "channel": "email",
+      "body": "Уважаемый(ая) {{full_name}},\n\nВаша ежемесячная выписка по задолженности:\n\nСумма долга: {{amount}} сом\nДата погашения: {{due_date}}\nДней просрочки: {{dpd}}\n\nС уважением, Отдел взыскания",
+      "language": "ru"
+    },
+    {
+      "name": "Email уведомление о просрочке",
+      "channel": "email",
+      "body": "Уважаемый(ая) {{full_name}},\n\nВаш кредит просрочен на {{dpd}} дней. Остаток: {{amount}} сом.\n\nПросим незамедлительно принять меры по погашению.\n\nОтдел взыскания",
+      "language": "ru"
+    },
+    {
+      "name": "Telegram напоминание DPD 1–7",
+      "channel": "telegram",
+      "body": "👋 {{full_name}}, добрый день!\n\nНапоминаем о платеже:\n• Сумма: {{amount}} сом\n• Дата: {{due_date}}\n\nОплатить можно через мобильный банк или кассу.",
+      "language": "ru"
+    },
+    {
+      "name": "Telegram подтверждение PTP",
+      "channel": "telegram",
+      "body": "✅ {{full_name}}, ваше обещание об оплате зафиксировано.\n\nСумма: {{amount}} сом\nОжидаемая дата: {{promise_date}}\n\nМы свяжемся с вами в указанный день.",
+      "language": "ru"
+    }
+  ],
+
+  "notification_logs": [
+    {
+      "caseIndex": 1,
+      "templateName": "SMS напоминание DPD 1–7",
+      "channel": "sms",
+      "status": "delivered",
+      "sentAt": "2026-05-10T09:00:00Z",
+      "responseRaw": "{\"provider\":\"smsgate_kg\",\"messageId\":\"sg-0001\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 1,
+      "templateName": "WhatsApp финальное уведомление",
+      "channel": "whatsapp",
+      "status": "sent",
+      "sentAt": "2026-05-20T10:30:00Z",
+      "responseRaw": "{\"provider\":\"ch2d\",\"messageId\":\"wa-0001\",\"status\":\"sent\"}"
+    },
+    {
+      "caseIndex": 2,
+      "templateName": "SMS напоминание DPD 1–7",
+      "channel": "sms",
+      "status": "delivered",
+      "sentAt": "2026-05-17T08:15:00Z",
+      "responseRaw": "{\"provider\":\"smsgate_kg\",\"messageId\":\"sg-0002\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 2,
+      "templateName": "Email ежемесячная выписка",
+      "channel": "email",
+      "status": "delivered",
+      "sentAt": "2026-05-01T07:00:00Z",
+      "responseRaw": "{\"provider\":\"sendgrid\",\"messageId\":\"em-0001\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 3,
+      "templateName": "WhatsApp напоминание DPD 1–7",
+      "channel": "whatsapp",
+      "status": "delivered",
+      "sentAt": "2026-05-22T11:00:00Z",
+      "responseRaw": "{\"provider\":\"ch2d\",\"messageId\":\"wa-0002\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 3,
+      "templateName": "Telegram подтверждение PTP",
+      "channel": "telegram",
+      "status": "delivered",
+      "sentAt": "2026-05-23T12:00:00Z",
+      "responseRaw": "{\"provider\":\"telegram_bot\",\"messageId\":\"tg-0001\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 4,
+      "templateName": "SMS напоминание DPD 1–7",
+      "channel": "sms",
+      "status": "queued",
+      "sentAt": null,
+      "responseRaw": null
+    },
+    {
+      "caseIndex": 5,
+      "templateName": "SMS финальное уведомление DPD 30+",
+      "channel": "sms",
+      "status": "delivered",
+      "sentAt": "2026-05-01T09:00:00Z",
+      "responseRaw": "{\"provider\":\"smsgate_kg\",\"messageId\":\"sg-0003\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 5,
+      "templateName": "WhatsApp финальное уведомление",
+      "channel": "whatsapp",
+      "status": "failed",
+      "sentAt": "2026-05-10T10:00:00Z",
+      "responseRaw": "{\"provider\":\"ch2d\",\"error\":\"receiver_not_registered\"}"
+    },
+    {
+      "caseIndex": 5,
+      "templateName": "Email уведомление о просрочке",
+      "channel": "email",
+      "status": "delivered",
+      "sentAt": "2026-05-15T07:30:00Z",
+      "responseRaw": "{\"provider\":\"sendgrid\",\"messageId\":\"em-0002\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 7,
+      "templateName": "SMS напоминание DPD 1–7",
+      "channel": "sms",
+      "status": "delivered",
+      "sentAt": "2026-05-05T08:00:00Z",
+      "responseRaw": "{\"provider\":\"smsgate_kg\",\"messageId\":\"sg-0004\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 7,
+      "templateName": "WhatsApp напоминание DPD 1–7",
+      "channel": "whatsapp",
+      "status": "delivered",
+      "sentAt": "2026-05-12T09:30:00Z",
+      "responseRaw": "{\"provider\":\"ch2d\",\"messageId\":\"wa-0003\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 9,
+      "templateName": "WhatsApp напоминание DPD 1–7",
+      "channel": "whatsapp",
+      "status": "delivered",
+      "sentAt": "2026-05-14T10:00:00Z",
+      "responseRaw": "{\"provider\":\"ch2d\",\"messageId\":\"wa-0004\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 9,
+      "templateName": "Telegram подтверждение PTP",
+      "channel": "telegram",
+      "status": "delivered",
+      "sentAt": "2026-05-15T11:00:00Z",
+      "responseRaw": "{\"provider\":\"telegram_bot\",\"messageId\":\"tg-0002\",\"status\":\"delivered\"}"
+    },
+    {
+      "caseIndex": 10,
+      "templateName": "SMS финальное уведомление DPD 30+",
+      "channel": "sms",
+      "status": "delivered",
+      "sentAt": "2026-04-28T08:00:00Z",
+      "responseRaw": "{\"provider\":\"smsgate_kg\",\"messageId\":\"sg-0005\",\"status\":\"delivered\"}"
+    }
+  ],
+
+  "scheduled_tasks": [
+    {
+      "caseIndex": 1,
+      "templateName": "WhatsApp финальное уведомление",
+      "channel": "whatsapp",
+      "scheduledAt": "2026-06-01T10:00:00Z",
+      "taskStatus": "pending"
+    },
+    {
+      "caseIndex": 2,
+      "templateName": "SMS напоминание DPD 1–7",
+      "channel": "sms",
+      "scheduledAt": "2026-05-29T09:00:00Z",
+      "taskStatus": "pending"
+    },
+    {
+      "caseIndex": 3,
+      "templateName": "WhatsApp напоминание DPD 1–7",
+      "channel": "whatsapp",
+      "scheduledAt": "2026-05-28T14:00:00Z",
+      "taskStatus": "sent"
+    },
+    {
+      "caseIndex": 5,
+      "templateName": "Email уведомление о просрочке",
+      "channel": "email",
+      "scheduledAt": "2026-06-05T07:00:00Z",
+      "taskStatus": "pending"
+    },
+    {
+      "caseIndex": 7,
+      "templateName": "Telegram напоминание DPD 1–7",
+      "channel": "telegram",
+      "scheduledAt": "2026-05-30T12:00:00Z",
+      "taskStatus": "pending"
+    },
+    {
+      "caseIndex": 10,
+      "templateName": "SMS финальное уведомление DPD 30+",
+      "channel": "sms",
+      "scheduledAt": "2026-05-25T09:00:00Z",
+      "taskStatus": "cancelled"
+    }
+  ],
+
+  "ptp_records": [
+    {
+      "caseIndex": 3,
+      "agentUsername": "agent_seitkali",
+      "promiseDate": "2026-06-05",
+      "promisedAmount": 15000.00,
+      "status": "pending",
+      "note": "Должник обещал оплатить после получения зарплаты 5 июня"
+    },
+    {
+      "caseIndex": 9,
+      "agentUsername": "agent_ivanov",
+      "promiseDate": "2026-05-30",
+      "promisedAmount": 50000.00,
+      "status": "pending",
+      "note": "Частичная оплата, остаток — до 15 июня"
+    },
+    {
+      "caseIndex": 2,
+      "agentUsername": "agent_ivanov",
+      "promiseDate": "2026-05-20",
+      "promisedAmount": 30000.00,
+      "status": "kept",
+      "note": null
+    },
+    {
+      "caseIndex": 7,
+      "agentUsername": "agent_bakyt",
+      "promiseDate": "2026-05-15",
+      "promisedAmount": 20000.00,
+      "status": "broken",
+      "note": "Клиент не вышел на связь в указанный день"
+    },
+    {
+      "caseIndex": 10,
+      "agentUsername": "agent_bakyt",
+      "promiseDate": "2026-06-10",
+      "promisedAmount": 42000.00,
+      "status": "pending",
+      "note": "Ожидает перечисления от родственников из России"
+    }
+  ],
+
+  "dpd_snapshots": [
+    { "caseIndex": 1,  "dpdValue": 30, "snapshotDate": "2026-05-13" },
+    { "caseIndex": 1,  "dpdValue": 45, "snapshotDate": "2026-05-28" },
+    { "caseIndex": 2,  "dpdValue": 5,  "snapshotDate": "2026-05-21" },
+    { "caseIndex": 2,  "dpdValue": 12, "snapshotDate": "2026-05-28" },
+    { "caseIndex": 3,  "dpdValue": 3,  "snapshotDate": "2026-05-23" },
+    { "caseIndex": 3,  "dpdValue": 8,  "snapshotDate": "2026-05-28" },
+    { "caseIndex": 4,  "dpdValue": 1,  "snapshotDate": "2026-05-26" },
+    { "caseIndex": 4,  "dpdValue": 3,  "snapshotDate": "2026-05-28" },
+    { "caseIndex": 5,  "dpdValue": 75, "snapshotDate": "2026-05-13" },
+    { "caseIndex": 5,  "dpdValue": 90, "snapshotDate": "2026-05-28" },
+    { "caseIndex": 6,  "dpdValue": 10, "snapshotDate": "2026-04-07" },
+    { "caseIndex": 6,  "dpdValue": 0,  "snapshotDate": "2026-05-01" },
+    { "caseIndex": 7,  "dpdValue": 15, "snapshotDate": "2026-05-13" },
+    { "caseIndex": 7,  "dpdValue": 25, "snapshotDate": "2026-05-28" },
+    { "caseIndex": 8,  "dpdValue": 0,  "snapshotDate": "2026-05-27" },
+    { "caseIndex": 8,  "dpdValue": 1,  "snapshotDate": "2026-05-28" },
+    { "caseIndex": 9,  "dpdValue": 10, "snapshotDate": "2026-05-23" },
+    { "caseIndex": 9,  "dpdValue": 15, "snapshotDate": "2026-05-28" },
+    { "caseIndex": 10, "dpdValue": 45, "snapshotDate": "2026-04-13" },
+    { "caseIndex": 10, "dpdValue": 60, "snapshotDate": "2026-05-28" }
+  ],
+
+  "agent_activity_logs": [
+    {
+      "agentUsername": "agent_ivanov",
+      "caseIndex": 1,
+      "actionType": "manual_notification_sent",
+      "note": "SMS напоминание отправлено вручную"
+    },
+    {
+      "agentUsername": "agent_ivanov",
+      "caseIndex": 2,
+      "actionType": "ptp_recorded",
+      "note": "Зафиксировано обещание об оплате на 20.05.2026"
+    },
+    {
+      "agentUsername": "agent_seitkali",
+      "caseIndex": 3,
+      "actionType": "ptp_recorded",
+      "note": "Должник обещал оплатить 05.06.2026"
+    },
+    {
+      "agentUsername": "agent_seitkali",
+      "caseIndex": 5,
+      "actionType": "manual_notification_sent",
+      "note": "WhatsApp уведомление — клиент не зарегистрирован"
+    },
+    {
+      "agentUsername": "agent_seitkali",
+      "caseIndex": 5,
+      "actionType": "status_changed",
+      "note": "Статус изменён на overdue после 90 дней просрочки"
+    },
+    {
+      "agentUsername": "agent_bakyt",
+      "caseIndex": 7,
+      "actionType": "ptp_recorded",
+      "note": "PTP на 20000 сом до 15.05.2026"
+    },
+    {
+      "agentUsername": "agent_bakyt",
+      "caseIndex": 7,
+      "actionType": "ptp_broken",
+      "note": "Клиент не вышел на связь, PTP нарушен"
+    },
+    {
+      "agentUsername": "agent_ivanov",
+      "caseIndex": 9,
+      "actionType": "manual_notification_sent",
+      "note": "WhatsApp напоминание перед датой PTP"
+    },
+    {
+      "agentUsername": "agent_bakyt",
+      "caseIndex": 10,
+      "actionType": "ptp_recorded",
+      "note": "Новое PTP на полную сумму 42000 сом"
+    },
+    {
+      "agentUsername": "admin",
+      "caseIndex": null,
+      "actionType": "integration_updated",
+      "note": "Обновлены настройки WhatsApp интеграции ch2d"
+    }
+  ],
+
+  "integration_configs": [
+    {
+      "channel": "whatsapp",
+      "provider": "ch2d",
+      "apiKey": "ch2d-api-key-mock-12345",
+      "webhookUrl": "https://hook.debtmanager.example.com/whatsapp",
+      "isActive": true
+    },
+    {
+      "channel": "sms",
+      "provider": "smsgate_kg",
+      "apiKey": "smsgate-api-key-mock-67890",
+      "webhookUrl": null,
+      "isActive": true
+    },
+    {
+      "channel": "telegram",
+      "provider": "telegram_bot",
+      "apiKey": "7890123456:AAFmock-telegram-bot-token-here",
+      "webhookUrl": "https://hook.debtmanager.example.com/telegram",
+      "isActive": true
+    },
+    {
+      "channel": "email",
+      "provider": "sendgrid",
+      "apiKey": "SG.mock-sendgrid-api-key-abcdef",
+      "webhookUrl": null,
+      "isActive": false
+    }
+  ]
+}
