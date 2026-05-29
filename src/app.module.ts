@@ -28,7 +28,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
         port: cfg.get<number>('DB_PORT', 5432),
         username: cfg.get('DB_USERNAME', 'postgres'),
         password: cfg.get('DB_PASSWORD', 'postgres'),
-        database: cfg.get('DB_NAME', 'debt_manager'),
+        database: cfg.get('DB_NAME', 'debt_collection'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: true,   // diploma mode — auto-creates tables
         logging: cfg.get('NODE_ENV') === 'development',

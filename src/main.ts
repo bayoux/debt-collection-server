@@ -27,7 +27,7 @@ async function bootstrap() {
 
   // Swagger
   const config = new DocumentBuilder()
-    .setTitle('Debt Manager API')
+    .setTitle('Debt Collection API')
     .setDescription(
       'Автоматизированная система управления дебиторской задолженностью с модулем омниканальных уведомлений',
     )

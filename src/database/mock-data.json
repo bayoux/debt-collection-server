@@ -33,11 +33,11 @@
   ],
 
   "users": [
-    { "username": "admin",             "email": "admin@debtmanager.local",      "password": "Admin1234!", "roleName": "admin" },
-    { "username": "agent_ivanov",      "email": "ivanov@debtmanager.local",     "password": "Agent1234!", "roleName": "agent" },
-    { "username": "supervisor_petrov", "email": "petrov@debtmanager.local",     "password": "Super1234!", "roleName": "supervisor" },
-    { "username": "agent_seitkali",    "email": "seitkali@debtmanager.local",   "password": "Agent1234!", "roleName": "agent" },
-    { "username": "agent_bakyt",       "email": "bakyt@debtmanager.local",      "password": "Agent1234!", "roleName": "agent" }
+    { "username": "admin",             "email": "admin@debtcollection.local",      "password": "Admin1234!", "roleName": "admin" },
+    { "username": "agent_ivanov",      "email": "ivanov@debtcollection.local",     "password": "Agent1234!", "roleName": "agent" },
+    { "username": "supervisor_petrov", "email": "petrov@debtcollection.local",     "password": "Super1234!", "roleName": "supervisor" },
+    { "username": "agent_seitkali",    "email": "seitkali@debtcollection.local",   "password": "Agent1234!", "roleName": "agent" },
+    { "username": "agent_bakyt",       "email": "bakyt@debtcollection.local",      "password": "Agent1234!", "roleName": "agent" }
   ],
 
   "debtors": [
@@ -549,7 +549,7 @@
       "channel": "whatsapp",
       "provider": "ch2d",
       "apiKey": "ch2d-api-key-mock-12345",
-      "webhookUrl": "https://hook.debtmanager.example.com/whatsapp",
+      "webhookUrl": "https://hook.debtcollection.example.com/whatsapp",
       "isActive": true
     },
     {
@@ -563,7 +563,7 @@
       "channel": "telegram",
       "provider": "telegram_bot",
       "apiKey": "7890123456:AAFmock-telegram-bot-token-here",
-      "webhookUrl": "https://hook.debtmanager.example.com/telegram",
+      "webhookUrl": "https://hook.debtcollection.example.com/telegram",
       "isActive": true
     },
     {

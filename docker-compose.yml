@@ -3,12 +3,12 @@ version: '3.9'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: debt_manager_db
+    container_name: debt_collection_db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: debt_manager
+      POSTGRES_DB: debt_collection
     ports:
       - '5432:5432'
     volumes:
@@ -23,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: debt_manager_app
+    container_name: debt_collection_app
     restart: unless-stopped
     depends_on:
       postgres:
@@ -37,7 +37,7 @@ services:
       DB_PORT: 5432
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
-      DB_NAME: debt_manager
+      DB_NAME: debt_collection
       JWT_ACCESS_SECRET: change_me_access_secret_very_long_string
       JWT_REFRESH_SECRET: change_me_refresh_secret_very_long_string
       JWT_ACCESS_EXPIRES_IN: 15m

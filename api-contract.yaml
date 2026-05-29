@@ -11,7 +11,7 @@ info:
 servers:
   - url: http://localhost:3000/api/v1
     description: Local development
-  - url: https://api.debtmanager.example.com/v1
+  - url: https://api.debtcollection.example.com/v1
     description: Production
 
 tags:

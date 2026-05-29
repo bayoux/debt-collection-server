@@ -33,7 +33,7 @@ const AppDataSource = new DataSource({
   port:     Number(process.env.DB_PORT ?? 5432),
   username: process.env.DB_USERNAME ?? 'postgres',
   password: process.env.DB_PASSWORD ?? 'postgres',
-  database: process.env.DB_NAME     ?? 'debt_manager',
+  database: process.env.DB_NAME     ?? 'debt_collection',
   entities: [
     User, Role, Permission,
     Debtor, DebtCase, DpdSnapshot,

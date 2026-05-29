@@ -3,12 +3,12 @@ version: '3.9'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: debt_manager_db
+    container_name: debt_collection_db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: debt_manager
+      POSTGRES_DB: debt_collection
     ports:
       - '5432:5432'
     volumes:
@@ -23,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    container_name: debt_manager_dev
+    container_name: debt_collection_dev
     restart: unless-stopped
     depends_on:
       postgres:

@@ -18,7 +18,7 @@ const AppDataSource = new DataSource({
   port: Number(process.env.DB_PORT ?? 5432),
   username: process.env.DB_USERNAME ?? 'postgres',
   password: process.env.DB_PASSWORD ?? 'postgres',
-  database: process.env.DB_NAME ?? 'debt_manager',
+  database: process.env.DB_NAME ?? 'debt_collection',
   entities: [User, Role, Permission],
   synchronize: true,
 });
@@ -65,19 +65,19 @@ const ROLES = [
 const USERS = [
   {
     username: 'admin',
-    email: 'admin@debtmanager.local',
+    email: 'admin@debtcollection.local',
     password: 'Admin1234!',
     roleName: 'admin',
   },
   {
     username: 'agent_ivanov',
-    email: 'ivanov@debtmanager.local',
+    email: 'ivanov@debtcollection.local',
     password: 'Agent1234!',
     roleName: 'agent',
   },
   {
     username: 'supervisor_petrov',
-    email: 'petrov@debtmanager.local',
+    email: 'petrov@debtcollection.local',
     password: 'Super1234!',
     roleName: 'supervisor',
   },

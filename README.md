@@ -1,4 +1,4 @@
-# Debt Manager — Auth Service
+# Debt Collection — Auth Service
 
 Автоматизированная система управления дебиторской задолженностью.  
 Первый модуль: **Auth + Users + Roles + Permissions**.
@@ -45,7 +45,7 @@ docker-compose -f docker-compose.dev.yml up --build
 docker-compose -f docker-compose.dev.yml down
 
 # логи в реальном времени
-docker logs -f debt_manager_dev
+docker logs -f debt_collection_dev
 ```
 ---
 
