@@ -26,8 +26,8 @@ export class TelegramUpdate {
     // or the @username (set manually by admin)
     const debtor = await this.debtorRepo
       .createQueryBuilder('d')
-      .where('d.telegram_id = :numericId', { numericId })
-      .orWhere(username ? 'd.telegram_id = :username' : '1=0', { username })
+      .where('d.telegramId = :numericId', { numericId })
+      .orWhere(username ? 'd.telegramId = :username' : '1=0', { username })
       .getOne();
 
     if (debtor && debtor.telegramId !== numericId) {
