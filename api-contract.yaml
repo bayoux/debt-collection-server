@@ -1353,13 +1353,15 @@ components:
     # Поле variables в SendNotification позволяет добавить или перезаписать любую переменную.
     #
     # Авто-переменные:
-    #   {{full_name}}  — ФИО должника              (debtor.full_name)
-    #   {{phone}}      — телефон должника           (debtor.phone)
-    #   {{email}}      — email должника             (debtor.email)
-    #   {{amount}}     — сумма долга                (debt_case.amount)
-    #   {{due_date}}   — дата платежа               (debt_case.due_date)
-    #   {{dpd}}        — дней просрочки             (debt_case.dpd)
-    #   {{status}}     — статус дела                (debt_case.status)
+    #   {{full_name}}       — ФИО должника              (debtor.full_name)
+    #   {{phone}}           — телефон должника           (debtor.phone)
+    #   {{email}}           — email должника             (debtor.email)
+    #   {{amount}}          — сумма долга                (debt_case.amount)
+    #   {{due_date}}        — дата платежа               (debt_case.due_date)
+    #   {{dpd}}             — дней просрочки             (debt_case.dpd)
+    #   {{status}}          — статус дела                (debt_case.status)
+    #   {{promise_date}}    — дата PTP (последний pending) (ptp_record.promise_date)
+    #   {{promised_amount}} — сумма PTP                  (ptp_record.promised_amount)
 
     NotificationTemplate:
       type: object
@@ -1393,7 +1395,8 @@ components:
             Оплатить можно через мобильный банк или кассу.
           description: >
             Текст сообщения. Поддерживает плейсхолдеры {{переменная}}.
-            Авто-переменные: full_name, phone, email, amount, due_date, dpd, status.
+            Авто-переменные: full_name, phone, email, amount, due_date, dpd, status,
+            promise_date, promised_amount (из последнего pending PTP по этому делу).
             Дополнительные переменные передаются в поле variables при отправке.
         language:
           type: string
@@ -1423,7 +1426,8 @@ components:
           type: string
           description: >
             Текст сообщения с плейсхолдерами {{переменная}}.
-            Авто-переменные (из дела): full_name, phone, email, amount, due_date, dpd, status.
+            Авто-переменные (из дела): full_name, phone, email, amount, due_date, dpd, status,
+            promise_date, promised_amount (из последнего pending PTP).
           example: |
             👋 {{full_name}}, добрый день!
 
@@ -1463,7 +1467,7 @@ components:
             Дополнительные переменные для подстановки в шаблон ({{key}} → value).
             Перезаписывают авто-переменные из дела, если совпадает ключ.
             Авто-переменные (заполняются всегда): full_name, phone, email,
-            amount, due_date, dpd, status.
+            amount, due_date, dpd, status, promise_date, promised_amount.
           example:
             custom_note: "Акция: оплатите до 31 мая и получите скидку 10%"
 

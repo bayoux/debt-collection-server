@@ -6,6 +6,7 @@ import { NotificationTemplate } from './entities/notification-template.entity';
 import { NotificationLog } from './entities/notification-log.entity';
 import { IntegrationConfig } from '../integrations/entities/integration-config.entity';
 import { DebtCase } from '../debt-cases/entities/debt-case.entity';
+import { PtpRecord } from '../ptp/entities/ptp-record.entity';
 import { TelegramService } from '../telegram/telegram.service';
 import {
   CreateNotificationTemplateDto,
@@ -23,6 +24,8 @@ export class NotificationsService {
     private readonly integrationRepo: Repository<IntegrationConfig>,
     @InjectRepository(DebtCase)
     private readonly debtCaseRepo: Repository<DebtCase>,
+    @InjectRepository(PtpRecord)
+    private readonly ptpRepo: Repository<PtpRecord>,
     private readonly mailerService: MailerService,
     private readonly telegramService: TelegramService,
   ) {}
@@ -68,14 +71,18 @@ export class NotificationsService {
   // ── Send ──────────────────────────────────────────────────
 
   async send(dto: SendNotificationDto): Promise<NotificationLog> {
-    const [template, debtCase] = await Promise.all([
+    const [template, debtCase, ptp] = await Promise.all([
       this.findOneTemplate(dto.templateId),
       this.debtCaseRepo.findOne({ where: { id: dto.debtCaseId }, relations: ['debtor'] }),
+      this.ptpRepo.findOne({
+        where: { debtCaseId: dto.debtCaseId, status: 'pending' },
+        order: { createdAt: 'DESC' },
+      }),
     ]);
 
-    // Build variables: auto-fill from debt case, then override with request variables
+    // Build variables: auto-fill from debt case + latest PTP, then override with request variables
     const vars: Record<string, string> = {
-      ...this.buildAutoVars(debtCase),
+      ...this.buildAutoVars(debtCase, ptp),
       ...(dto.variables ?? {}),
     };
 
@@ -98,17 +105,21 @@ export class NotificationsService {
     return log;
   }
 
-  private buildAutoVars(debtCase: DebtCase | null): Record<string, string> {
-    if (!debtCase) return {};
-    const d = debtCase.debtor;
+  private buildAutoVars(
+    debtCase: DebtCase | null,
+    ptp: PtpRecord | null = null,
+  ): Record<string, string> {
+    const d = debtCase?.debtor;
     return {
       full_name: d?.fullName ?? '',
       phone: d?.phone ?? '',
       email: d?.email ?? '',
-      amount: debtCase.amount != null ? String(debtCase.amount) : '',
-      due_date: debtCase.dueDate ?? '',
-      dpd: debtCase.dpd != null ? String(debtCase.dpd) : '',
-      status: debtCase.status ?? '',
+      amount: debtCase?.amount != null ? String(debtCase.amount) : '',
+      due_date: debtCase?.dueDate ?? '',
+      dpd: debtCase?.dpd != null ? String(debtCase.dpd) : '',
+      status: debtCase?.status ?? '',
+      promise_date: ptp?.promiseDate ?? '',
+      promised_amount: ptp?.promisedAmount != null ? String(ptp.promisedAmount) : '',
     };
   }
 

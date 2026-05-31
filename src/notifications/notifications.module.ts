@@ -4,6 +4,7 @@ import { NotificationTemplate } from './entities/notification-template.entity';
 import { NotificationLog } from './entities/notification-log.entity';
 import { IntegrationConfig } from '../integrations/entities/integration-config.entity';
 import { DebtCase } from '../debt-cases/entities/debt-case.entity';
+import { PtpRecord } from '../ptp/entities/ptp-record.entity';
 import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { EmailModule } from '../email/email.module';
@@ -11,7 +12,7 @@ import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NotificationTemplate, NotificationLog, IntegrationConfig, DebtCase]),
+    TypeOrmModule.forFeature([NotificationTemplate, NotificationLog, IntegrationConfig, DebtCase, PtpRecord]),
     EmailModule,
     TelegramModule,
   ],
