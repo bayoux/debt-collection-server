@@ -5,6 +5,8 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { NotificationTemplate } from './entities/notification-template.entity';
 import { NotificationLog } from './entities/notification-log.entity';
 import { IntegrationConfig } from '../integrations/entities/integration-config.entity';
+import { DebtCase } from '../debt-cases/entities/debt-case.entity';
+import { TelegramService } from '../telegram/telegram.service';
 import {
   CreateNotificationTemplateDto,
   SendNotificationDto,
@@ -19,7 +21,10 @@ export class NotificationsService {
     private readonly logRepo: Repository<NotificationLog>,
     @InjectRepository(IntegrationConfig)
     private readonly integrationRepo: Repository<IntegrationConfig>,
+    @InjectRepository(DebtCase)
+    private readonly debtCaseRepo: Repository<DebtCase>,
     private readonly mailerService: MailerService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   // ── Templates ─────────────────────────────────────────────
@@ -75,6 +80,8 @@ export class NotificationsService {
 
     if (dto.channel === 'email') {
       await this.sendEmail(log, template, dto);
+    } else if (dto.channel === 'telegram') {
+      await this.sendViaTelegram(log, template, dto);
     } else {
       await this.sendViaWebhook(log, template, dto);
     }
@@ -97,6 +104,39 @@ export class NotificationsService {
         html,
       });
 
+      log.status = 'sent';
+      log.sentAt = new Date();
+    } catch (err) {
+      log.status = 'failed';
+      log.responseRaw = (err as Error).message;
+    }
+
+    await this.logRepo.save(log);
+  }
+
+  private async sendViaTelegram(
+    log: NotificationLog,
+    template: NotificationTemplate,
+    dto: SendNotificationDto,
+  ): Promise<void> {
+    const debtCase = await this.debtCaseRepo.findOne({
+      where: { id: dto.debtCaseId },
+      relations: ['debtor'],
+    });
+
+    const chatId = debtCase?.debtor?.telegramId;
+
+    if (!chatId) {
+      log.status = 'failed';
+      log.responseRaw = `Debtor has no telegramId set for debt case ${dto.debtCaseId}`;
+      await this.logRepo.save(log);
+      return;
+    }
+
+    const text = this.interpolate(template.body, dto.variables ?? {});
+
+    try {
+      await this.telegramService.sendMessage(chatId, text);
       log.status = 'sent';
       log.sentAt = new Date();
     } catch (err) {
