@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { MailerService } from '@nestjs-modules/mailer';
 import { NotificationTemplate } from './entities/notification-template.entity';
 import { NotificationLog } from './entities/notification-log.entity';
+import { IntegrationConfig } from '../integrations/entities/integration-config.entity';
 import {
   CreateNotificationTemplateDto,
   SendNotificationDto,
@@ -15,6 +17,9 @@ export class NotificationsService {
     private readonly templateRepo: Repository<NotificationTemplate>,
     @InjectRepository(NotificationLog)
     private readonly logRepo: Repository<NotificationLog>,
+    @InjectRepository(IntegrationConfig)
+    private readonly integrationRepo: Repository<IntegrationConfig>,
+    private readonly mailerService: MailerService,
   ) {}
 
   // ── Templates ─────────────────────────────────────────────
@@ -23,6 +28,7 @@ export class NotificationsService {
     const template = this.templateRepo.create({
       name: dto.name,
       channel: dto.channel as any,
+      subject: dto.subject,
       body: dto.body,
       language: dto.language ?? 'ru',
     });
@@ -57,14 +63,111 @@ export class NotificationsService {
   // ── Send ──────────────────────────────────────────────────
 
   async send(dto: SendNotificationDto): Promise<NotificationLog> {
-    await this.findOneTemplate(dto.templateId);
+    const template = await this.findOneTemplate(dto.templateId);
+
     const log = this.logRepo.create({
       debtCaseId: dto.debtCaseId,
       template: { id: dto.templateId } as any,
       channel: dto.channel,
       status: 'queued',
     });
-    return this.logRepo.save(log);
+    await this.logRepo.save(log);
+
+    if (dto.channel === 'email') {
+      await this.sendEmail(log, template, dto);
+    } else {
+      await this.sendViaWebhook(log, template, dto);
+    }
+
+    return log;
+  }
+
+  private async sendEmail(
+    log: NotificationLog,
+    template: NotificationTemplate,
+    dto: SendNotificationDto,
+  ): Promise<void> {
+    const html = this.interpolate(template.body, dto.variables ?? {});
+    const subject = dto.subject ?? template.subject ?? template.name;
+
+    try {
+      await this.mailerService.sendMail({
+        to: dto.recipientEmail,
+        subject,
+        html,
+      });
+
+      log.status = 'sent';
+      log.sentAt = new Date();
+    } catch (err) {
+      log.status = 'failed';
+      log.responseRaw = (err as Error).message;
+    }
+
+    await this.logRepo.save(log);
+  }
+
+  private async sendViaWebhook(
+    log: NotificationLog,
+    template: NotificationTemplate,
+    dto: SendNotificationDto,
+  ): Promise<void> {
+    const integration = await this.integrationRepo.findOne({
+      where: { channel: dto.channel, isActive: true },
+      select: ['id', 'channel', 'provider', 'apiKey', 'webhookUrl', 'isActive'],
+    });
+
+    if (!integration) {
+      log.status = 'failed';
+      log.responseRaw = `No active integration configured for channel: ${dto.channel}`;
+      await this.logRepo.save(log);
+      return;
+    }
+
+    if (!integration.webhookUrl) {
+      log.status = 'failed';
+      log.responseRaw = `Integration "${integration.provider}" has no webhook URL configured`;
+      await this.logRepo.save(log);
+      return;
+    }
+
+    const body = this.interpolate(template.body, dto.variables ?? {});
+
+    try {
+      const res = await fetch(integration.webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${integration.apiKey}`,
+        },
+        body: JSON.stringify({
+          channel: dto.channel,
+          debt_case_id: dto.debtCaseId,
+          message: body,
+        }),
+      });
+
+      log.responseRaw = String(res.status);
+
+      if (res.ok) {
+        log.status = 'sent';
+        log.sentAt = new Date();
+      } else {
+        const text = await res.text().catch(() => '');
+        log.status = 'failed';
+        log.responseRaw = `HTTP ${res.status}: ${text}`;
+      }
+    } catch (err) {
+      log.status = 'failed';
+      log.responseRaw = (err as Error).message;
+    }
+
+    await this.logRepo.save(log);
+  }
+
+  // Replaces {{key}} placeholders in template body
+  private interpolate(text: string, vars: Record<string, string>): string {
+    return text.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
   }
 
   // ── Logs ──────────────────────────────────────────────────

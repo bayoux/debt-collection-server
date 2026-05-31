@@ -118,6 +118,22 @@ paths:
         "204":
           description: Выход выполнен
 
+  /auth/me/:
+    get:
+      tags: [Auth]
+      summary: Получить текущего пользователя
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Текущий пользователь
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   # ── USERS ─────────────────────────────
   /users/:
     get:
@@ -597,18 +613,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [debt_case_id, template_id, channel]
-              properties:
-                debt_case_id:
-                  type: string
-                  format: uuid
-                template_id:
-                  type: string
-                  format: uuid
-                channel:
-                  type: string
-                  enum: [whatsapp, sms, telegram, email]
+              $ref: "#/components/schemas/SendNotification"
       responses:
         "202":
           description: Уведомление поставлено в очередь
@@ -1290,12 +1295,23 @@ components:
         channel:
           type: string
           enum: [whatsapp, sms, telegram, email]
+        subject:
+          type: string
+          nullable: true
+          example: "Уведомление о задолженности"
+          description: Тема письма (только для email)
         body:
           type: string
           example: "Уважаемый {{full_name}}, у вас задолженность {{amount}} сом. Пожалуйста, оплатите до {{due_date}}."
         language:
           type: string
           example: ru
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
 
     NotificationTemplateCreate:
       type: object
@@ -1306,11 +1322,43 @@ components:
         channel:
           type: string
           enum: [whatsapp, sms, telegram, email]
+        subject:
+          type: string
+          description: Тема письма (только для email)
         body:
           type: string
         language:
           type: string
           default: ru
+
+    SendNotification:
+      type: object
+      required: [debt_case_id, template_id, channel]
+      properties:
+        debt_case_id:
+          type: string
+          format: uuid
+        template_id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+          enum: [whatsapp, sms, telegram, email]
+        recipient_email:
+          type: string
+          format: email
+          description: Email получателя (обязательно при channel=email)
+        subject:
+          type: string
+          description: Тема письма (переопределяет тему из шаблона)
+        variables:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            full_name: "Иван Иванов"
+            amount: "5000"
+          description: Переменные для подстановки в шаблон ({{key}} → value)
 
     NotificationLog:
       type: object
@@ -1325,6 +1373,7 @@ components:
           $ref: "#/components/schemas/NotificationTemplate"
         channel:
           type: string
+          enum: [whatsapp, sms, telegram, email]
         status:
           type: string
           enum: [queued, sent, delivered, failed]
@@ -1336,6 +1385,9 @@ components:
           type: string
           nullable: true
           description: Сырой ответ от провайдера
+        created_at:
+          type: string
+          format: date-time
 
     PaginatedNotificationLogs:
       allOf:

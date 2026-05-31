@@ -1,10 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
+  ValidateIf,
 } from 'class-validator';
 
 const CHANNELS = ['whatsapp', 'sms', 'telegram', 'email'] as const;
@@ -19,7 +22,12 @@ export class CreateNotificationTemplateDto {
   @IsEnum(CHANNELS)
   channel: string;
 
-  @ApiProperty({ example: 'Уважаемый {{full_name}}, ...' })
+  @ApiPropertyOptional({ example: 'Уведомление о задолженности', description: 'Тема письма (только для email)' })
+  @IsString()
+  @IsOptional()
+  subject?: string;
+
+  @ApiProperty({ example: 'Уважаемый {{full_name}}, у вас задолженность {{amount}} сом.' })
   @IsString()
   @IsNotEmpty()
   body: string;
@@ -42,4 +50,22 @@ export class SendNotificationDto {
   @ApiProperty({ enum: CHANNELS })
   @IsEnum(CHANNELS)
   channel: string;
+
+  @ApiPropertyOptional({ example: 'debtor@example.com', description: 'Email получателя (обязательно для channel=email)' })
+  @ValidateIf((o) => o.channel === 'email')
+  @IsEmail()
+  recipientEmail?: string;
+
+  @ApiPropertyOptional({ example: 'Уведомление о задолженности', description: 'Тема письма (переопределяет тему из шаблона)' })
+  @IsString()
+  @IsOptional()
+  subject?: string;
+
+  @ApiPropertyOptional({
+    example: { full_name: 'Иван Иванов', amount: '5000' },
+    description: 'Переменные для подстановки в шаблон ({{key}} → value)',
+  })
+  @IsObject()
+  @IsOptional()
+  variables?: Record<string, string>;
 }

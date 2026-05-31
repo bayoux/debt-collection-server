@@ -23,6 +23,10 @@ export class NotificationTemplate {
   @Column()
   channel: NotificationChannel;
 
+  @ApiPropertyOptional({ example: 'Уведомление о задолженности', description: 'Тема письма (только для email)' })
+  @Column({ nullable: true })
+  subject: string;
+
   @ApiProperty({ example: 'Уважаемый {{full_name}}, у вас задолженность {{amount}} сом.' })
   @Column({ type: 'text' })
   body: string;
