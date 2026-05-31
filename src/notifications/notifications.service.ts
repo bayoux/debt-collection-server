@@ -68,7 +68,16 @@ export class NotificationsService {
   // ── Send ──────────────────────────────────────────────────
 
   async send(dto: SendNotificationDto): Promise<NotificationLog> {
-    const template = await this.findOneTemplate(dto.templateId);
+    const [template, debtCase] = await Promise.all([
+      this.findOneTemplate(dto.templateId),
+      this.debtCaseRepo.findOne({ where: { id: dto.debtCaseId }, relations: ['debtor'] }),
+    ]);
+
+    // Build variables: auto-fill from debt case, then override with request variables
+    const vars: Record<string, string> = {
+      ...this.buildAutoVars(debtCase),
+      ...(dto.variables ?? {}),
+    };
 
     const log = this.logRepo.create({
       debtCaseId: dto.debtCaseId,
@@ -79,23 +88,38 @@ export class NotificationsService {
     await this.logRepo.save(log);
 
     if (dto.channel === 'email') {
-      await this.sendEmail(log, template, dto);
+      await this.sendEmail(log, template, dto, vars);
     } else if (dto.channel === 'telegram') {
-      await this.sendViaTelegram(log, template, dto);
+      await this.sendViaTelegram(log, template, debtCase, vars);
     } else {
-      await this.sendViaWebhook(log, template, dto);
+      await this.sendViaWebhook(log, template, dto, vars);
     }
 
     return log;
+  }
+
+  private buildAutoVars(debtCase: DebtCase | null): Record<string, string> {
+    if (!debtCase) return {};
+    const d = debtCase.debtor;
+    return {
+      full_name: d?.fullName ?? '',
+      phone: d?.phone ?? '',
+      email: d?.email ?? '',
+      amount: debtCase.amount != null ? String(debtCase.amount) : '',
+      due_date: debtCase.dueDate ?? '',
+      dpd: debtCase.dpd != null ? String(debtCase.dpd) : '',
+      status: debtCase.status ?? '',
+    };
   }
 
   private async sendEmail(
     log: NotificationLog,
     template: NotificationTemplate,
     dto: SendNotificationDto,
+    vars: Record<string, string>,
   ): Promise<void> {
-    const html = this.interpolate(template.body, dto.variables ?? {});
-    const subject = dto.subject ?? template.subject ?? template.name;
+    const html = this.interpolate(template.body, vars);
+    const subject = this.interpolate(dto.subject ?? template.subject ?? template.name, vars);
 
     try {
       await this.mailerService.sendMail({
@@ -117,23 +141,19 @@ export class NotificationsService {
   private async sendViaTelegram(
     log: NotificationLog,
     template: NotificationTemplate,
-    dto: SendNotificationDto,
+    debtCase: DebtCase | null,
+    vars: Record<string, string>,
   ): Promise<void> {
-    const debtCase = await this.debtCaseRepo.findOne({
-      where: { id: dto.debtCaseId },
-      relations: ['debtor'],
-    });
-
     const chatId = debtCase?.debtor?.telegramId;
 
     if (!chatId) {
       log.status = 'failed';
-      log.responseRaw = `Debtor has no telegramId set for debt case ${dto.debtCaseId}`;
+      log.responseRaw = `Debtor has no telegramId set for debt case ${log.debtCaseId}`;
       await this.logRepo.save(log);
       return;
     }
 
-    const text = this.interpolate(template.body, dto.variables ?? {});
+    const text = this.interpolate(template.body, vars);
 
     try {
       await this.telegramService.sendMessage(chatId, text);
@@ -151,6 +171,7 @@ export class NotificationsService {
     log: NotificationLog,
     template: NotificationTemplate,
     dto: SendNotificationDto,
+    vars: Record<string, string>,
   ): Promise<void> {
     const integration = await this.integrationRepo.findOne({
       where: { channel: dto.channel, isActive: true },
@@ -171,7 +192,7 @@ export class NotificationsService {
       return;
     }
 
-    const body = this.interpolate(template.body, dto.variables ?? {});
+    const message = this.interpolate(template.body, vars);
 
     try {
       const res = await fetch(integration.webhookUrl, {
@@ -183,7 +204,7 @@ export class NotificationsService {
         body: JSON.stringify({
           channel: dto.channel,
           debt_case_id: dto.debtCaseId,
-          message: body,
+          message,
         }),
       });
 
@@ -205,7 +226,7 @@ export class NotificationsService {
     await this.logRepo.save(log);
   }
 
-  // Replaces {{key}} placeholders in template body
+  // Replaces {{key}} placeholders with values; unknown keys stay as-is
   private interpolate(text: string, vars: Record<string, string>): string {
     return text.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
   }
