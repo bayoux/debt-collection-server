@@ -1348,6 +1348,19 @@ components:
                 $ref: "#/components/schemas/DebtCase"
 
     # ── NOTIFICATION TEMPLATE ──
+
+    # Все переменные {{...}} в теле шаблона подставляются автоматически из DebtCase+Debtor.
+    # Поле variables в SendNotification позволяет добавить или перезаписать любую переменную.
+    #
+    # Авто-переменные:
+    #   {{full_name}}  — ФИО должника              (debtor.full_name)
+    #   {{phone}}      — телефон должника           (debtor.phone)
+    #   {{email}}      — email должника             (debtor.email)
+    #   {{amount}}     — сумма долга                (debt_case.amount)
+    #   {{due_date}}   — дата платежа               (debt_case.due_date)
+    #   {{dpd}}        — дней просрочки             (debt_case.dpd)
+    #   {{status}}     — статус дела                (debt_case.status)
+
     NotificationTemplate:
       type: object
       properties:
@@ -1363,11 +1376,25 @@ components:
         subject:
           type: string
           nullable: true
-          example: "Уведомление о задолженности"
-          description: Тема письма (только для email)
+          example: "Уведомление о задолженности — {{full_name}}"
+          description: >
+            Тема письма (только для email).
+            Поддерживает те же {{переменные}}, что и body.
         body:
           type: string
-          example: "Уважаемый {{full_name}}, у вас задолженность {{amount}} сом. Пожалуйста, оплатите до {{due_date}}."
+          example: |
+            👋 {{full_name}}, добрый день!
+
+            Напоминаем о платеже:
+            • Сумма: {{amount}} сом
+            • Дата: {{due_date}}
+            • Просрочка: {{dpd}} дн.
+
+            Оплатить можно через мобильный банк или кассу.
+          description: >
+            Текст сообщения. Поддерживает плейсхолдеры {{переменная}}.
+            Авто-переменные: full_name, phone, email, amount, due_date, dpd, status.
+            Дополнительные переменные передаются в поле variables при отправке.
         language:
           type: string
           example: ru
@@ -1384,14 +1411,26 @@ components:
       properties:
         name:
           type: string
+          example: "Напоминание DPD 1-7 дней"
         channel:
           type: string
           enum: [whatsapp, sms, telegram, email]
         subject:
           type: string
-          description: Тема письма (только для email)
+          description: Тема письма (только для email). Поддерживает {{переменные}}.
+          example: "Уведомление о задолженности — {{full_name}}"
         body:
           type: string
+          description: >
+            Текст сообщения с плейсхолдерами {{переменная}}.
+            Авто-переменные (из дела): full_name, phone, email, amount, due_date, dpd, status.
+          example: |
+            👋 {{full_name}}, добрый день!
+
+            Напоминаем о платеже:
+            • Сумма: {{amount}} сом
+            • Дата: {{due_date}}
+            • Просрочка: {{dpd}} дн.
         language:
           type: string
           default: ru
@@ -1415,15 +1454,18 @@ components:
           description: Email получателя (обязательно при channel=email)
         subject:
           type: string
-          description: Тема письма (переопределяет тему из шаблона)
+          description: Тема письма (переопределяет тему из шаблона, поддерживает {{переменные}})
         variables:
           type: object
           additionalProperties:
             type: string
+          description: >
+            Дополнительные переменные для подстановки в шаблон ({{key}} → value).
+            Перезаписывают авто-переменные из дела, если совпадает ключ.
+            Авто-переменные (заполняются всегда): full_name, phone, email,
+            amount, due_date, dpd, status.
           example:
-            full_name: "Иван Иванов"
-            amount: "5000"
-          description: Переменные для подстановки в шаблон ({{key}} → value)
+            custom_note: "Акция: оплатите до 31 мая и получите скидку 10%"
 
     NotificationLog:
       type: object
