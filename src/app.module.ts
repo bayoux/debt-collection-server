@@ -12,6 +12,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 import { PtpModule } from './ptp/ptp.module';
 import { ReportsModule } from './reports/reports.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { TelegramModule } from './telegram/telegram.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
     PtpModule,
     ReportsModule,
     IntegrationsModule,
+    TelegramModule,
   ],
 })
 export class AppModule implements NestModule {

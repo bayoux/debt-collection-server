@@ -46,6 +46,7 @@ async function bootstrap() {
     .addTag('PTP', 'Обещания об оплате')
     .addTag('Reports', 'Аналитика и отчёты')
     .addTag('Integrations', 'Конфигурация внешних каналов')
+    .addTag('Telegram', 'Прямая отправка сообщений через Telegram-бота')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -35,6 +35,8 @@ tags:
     description: Аналитика и отчёты
   - name: Integrations
     description: Конфигурация внешних каналов
+  - name: Telegram
+    description: Прямая отправка сообщений через Telegram-бота
 
 # ─────────────────────────────────────────
 # PATHS
@@ -881,6 +883,69 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
 
+  # ── TELEGRAM ──────────────────────────
+  /telegram/send/:
+    post:
+      tags: [Telegram]
+      summary: Отправить простое сообщение в Telegram
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramSendMessage"
+      responses:
+        "200":
+          description: Сообщение отправлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /telegram/notify/:
+    post:
+      tags: [Telegram]
+      summary: Отправить форматированное уведомление
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramSendNotification"
+      responses:
+        "200":
+          description: Уведомление отправлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramResult"
+
+  /telegram/alert/:
+    post:
+      tags: [Telegram]
+      summary: Отправить срочное уведомление с эмодзи 🚨
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramSendAlert"
+      responses:
+        "200":
+          description: Алерт отправлен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TelegramResult"
+
   # ── INTEGRATIONS ──────────────────────
   /integrations/:
     get:
@@ -1608,6 +1673,51 @@ components:
         is_active:
           type: boolean
           default: true
+
+    # ── TELEGRAM ──
+    TelegramSendMessage:
+      type: object
+      required: [chat_id, text]
+      properties:
+        chat_id:
+          type: string
+          description: Telegram chat_id или @username
+          example: "123456789"
+        text:
+          type: string
+          example: "Задолженность по делу #123 погашена."
+
+    TelegramSendNotification:
+      type: object
+      required: [chat_id, title, body]
+      properties:
+        chat_id:
+          type: string
+          example: "123456789"
+        title:
+          type: string
+          example: "Обновление по делу"
+        body:
+          type: string
+          example: "Должник Иван Иванов оплатил 5000 сом."
+
+    TelegramSendAlert:
+      type: object
+      required: [chat_id, message]
+      properties:
+        chat_id:
+          type: string
+          example: "123456789"
+        message:
+          type: string
+          example: "DPD > 90 дней: 12 новых дел требуют немедленного внимания!"
+
+    TelegramResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
 
     # ── SHARED ──
     Pagination:
