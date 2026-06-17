@@ -8,7 +8,7 @@ import {
   IsUrl,
 } from 'class-validator';
 
-const CHANNELS = ['whatsapp', 'sms', 'telegram', 'email'] as const;
+const CHANNELS = ['whatsapp', 'sms', 'telegram', 'email', 'chat2desk'] as const;
 
 export class CreateIntegrationConfigDto {
   @ApiProperty({ enum: CHANNELS })

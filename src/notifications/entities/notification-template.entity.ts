@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export type NotificationChannel = 'whatsapp' | 'sms' | 'telegram' | 'email';
+export type NotificationChannel = 'whatsapp' | 'sms' | 'telegram' | 'email' | 'chat2desk';
 
 @Entity('notification_templates')
 export class NotificationTemplate {
@@ -19,7 +19,7 @@ export class NotificationTemplate {
   @Column()
   name: string;
 
-  @ApiProperty({ enum: ['whatsapp', 'sms', 'telegram', 'email'] })
+  @ApiProperty({ enum: ['whatsapp', 'sms', 'telegram', 'email', 'chat2desk'] })
   @Column()
   channel: NotificationChannel;
 

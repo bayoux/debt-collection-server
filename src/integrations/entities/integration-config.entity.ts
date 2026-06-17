@@ -13,7 +13,7 @@ export class IntegrationConfig {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty({ enum: ['whatsapp', 'sms', 'telegram', 'email'] })
+  @ApiProperty({ enum: ['whatsapp', 'sms', 'telegram', 'email', 'chat2desk'] })
   @Column()
   channel: string;
 

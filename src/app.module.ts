@@ -13,6 +13,7 @@ import { PtpModule } from './ptp/ptp.module';
 import { ReportsModule } from './reports/reports.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { Chat2DeskModule } from './chat2desk/chat2desk.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { TelegramModule } from './telegram/telegram.module';
     ReportsModule,
     IntegrationsModule,
     TelegramModule,
+    Chat2DeskModule,
   ],
 })
 export class AppModule implements NestModule {

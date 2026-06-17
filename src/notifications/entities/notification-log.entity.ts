@@ -26,7 +26,7 @@ export class NotificationLog {
   @JoinColumn({ name: 'template_id' })
   template: NotificationTemplate;
 
-  @ApiProperty({ enum: ['whatsapp', 'sms', 'telegram', 'email'] })
+  @ApiProperty({ enum: ['whatsapp', 'sms', 'telegram', 'email', 'chat2desk'] })
   @Column()
   channel: string;
 

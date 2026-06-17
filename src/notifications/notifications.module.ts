@@ -9,12 +9,14 @@ import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { EmailModule } from '../email/email.module';
 import { TelegramModule } from '../telegram/telegram.module';
+import { Chat2DeskModule } from '../chat2desk/chat2desk.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([NotificationTemplate, NotificationLog, IntegrationConfig, DebtCase, PtpRecord]),
     EmailModule,
     TelegramModule,
+    Chat2DeskModule,
   ],
   controllers: [NotificationsController],
   providers: [NotificationsService],

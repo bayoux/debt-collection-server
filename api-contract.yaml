@@ -3,8 +3,9 @@ info:
   title: Debt Management System API
   description: >
     Автоматизированная система управления дебиторской задолженностью
-    с модулем омниканальных уведомлений (SMS / WhatsApp / Telegram / Email).
-  version: 1.0.0
+    с модулем омниканальных уведомлений (SMS / WhatsApp / Telegram / Email / Chat2Desk).
+    Chat2Desk — канал WhatsApp через API chat2desk.com. Токен задаётся переменной CHAT2DESK_API_TOKEN.
+  version: 1.1.0
   contact:
     name: Dev Team
 
@@ -37,6 +38,8 @@ tags:
     description: Конфигурация внешних каналов
   - name: Telegram
     description: Прямая отправка сообщений через Telegram-бота
+  - name: Chat2Desk
+    description: Отправка WhatsApp-сообщений через Chat2Desk API (chat2desk.com)
 
 # ─────────────────────────────────────────
 # PATHS
@@ -534,7 +537,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [whatsapp, sms, telegram, email]
+            enum: [whatsapp, sms, telegram, email, chat2desk]
       responses:
         "200":
           description: OK
@@ -631,6 +634,32 @@ paths:
                     type: string
                     example: queued
 
+  /notifications/broadcast/:
+    post:
+      tags: [Notifications]
+      summary: Массовая рассылка (broadcast)
+      description: >
+        Отправляет уведомление по выбранному каналу всем переданным долговым делам.
+        Если debtCaseIds не указан — рассылка по всем делам в системе.
+        Для canal chat2desk использует whatsapp_number должника (или phone, если whatsapp_number не задан).
+        Для canal telegram — поле telegram_id должника.
+        Для canal email — поле email должника.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BroadcastNotification"
+      responses:
+        "202":
+          description: Рассылка выполнена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BroadcastResult"
+
   /notifications/logs/:
     get:
       tags: [Notifications]
@@ -649,7 +678,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [whatsapp, sms, telegram, email]
+            enum: [whatsapp, sms, telegram, email, chat2desk]
         - name: status
           in: query
           schema:
@@ -945,6 +974,52 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TelegramResult"
+
+  # ── CHAT2DESK ─────────────────────────
+  /chat2desk/send/:
+    post:
+      tags: [Chat2Desk]
+      summary: Отправить WhatsApp-сообщение напрямую через Chat2Desk
+      description: >
+        Низкоуровневый метод прямой отправки. Для массовой рассылки по шаблону
+        используйте POST /notifications/broadcast с channel=chat2desk.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Chat2DeskSendMessage"
+      responses:
+        "200":
+          description: Сообщение отправлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Chat2DeskResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /chat2desk/test/:
+    post:
+      tags: [Chat2Desk]
+      summary: Проверить соединение с Chat2Desk API
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Результат проверки
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: "Chat2Desk connection OK"
 
   # ── INTEGRATIONS ──────────────────────
   /integrations/:
@@ -1374,7 +1449,7 @@ components:
           example: "Напоминание DPD 1-7 дней"
         channel:
           type: string
-          enum: [whatsapp, sms, telegram, email]
+          enum: [whatsapp, sms, telegram, email, chat2desk]
         subject:
           type: string
           nullable: true
@@ -1417,7 +1492,7 @@ components:
           example: "Напоминание DPD 1-7 дней"
         channel:
           type: string
-          enum: [whatsapp, sms, telegram, email]
+          enum: [whatsapp, sms, telegram, email, chat2desk]
         subject:
           type: string
           description: Тема письма (только для email). Поддерживает {{переменные}}.
@@ -1451,7 +1526,7 @@ components:
           format: uuid
         channel:
           type: string
-          enum: [whatsapp, sms, telegram, email]
+          enum: [whatsapp, sms, telegram, email, chat2desk]
         recipient_email:
           type: string
           format: email
@@ -1484,7 +1559,7 @@ components:
           $ref: "#/components/schemas/NotificationTemplate"
         channel:
           type: string
-          enum: [whatsapp, sms, telegram, email]
+          enum: [whatsapp, sms, telegram, email, chat2desk]
         status:
           type: string
           enum: [queued, sent, delivered, failed]
@@ -1524,7 +1599,7 @@ components:
           $ref: "#/components/schemas/NotificationTemplate"
         channel:
           type: string
-          enum: [whatsapp, sms, telegram, email]
+          enum: [whatsapp, sms, telegram, email, chat2desk]
         scheduled_at:
           type: string
           format: date-time
@@ -1544,7 +1619,7 @@ components:
           format: uuid
         channel:
           type: string
-          enum: [whatsapp, sms, telegram, email]
+          enum: [whatsapp, sms, telegram, email, chat2desk]
         scheduled_at:
           type: string
           format: date-time
@@ -1688,7 +1763,7 @@ components:
           format: uuid
         channel:
           type: string
-          enum: [whatsapp, sms, telegram, email]
+          enum: [whatsapp, sms, telegram, email, chat2desk]
         provider:
           type: string
           example: ch2d
@@ -1705,7 +1780,7 @@ components:
       properties:
         channel:
           type: string
-          enum: [whatsapp, sms, telegram, email]
+          enum: [whatsapp, sms, telegram, email, chat2desk]
         provider:
           type: string
           example: ch2d
@@ -1764,6 +1839,100 @@ components:
         ok:
           type: boolean
           example: true
+
+    # ── BROADCAST ──
+    BroadcastNotification:
+      type: object
+      required: [template_id, channel]
+      properties:
+        template_id:
+          type: string
+          format: uuid
+          description: ID шаблона уведомления
+        channel:
+          type: string
+          enum: [whatsapp, sms, telegram, email, chat2desk]
+          description: >
+            Канал рассылки.
+            chat2desk — WhatsApp через Chat2Desk API (использует whatsapp_number или phone должника).
+            telegram — требует telegram_id у должника.
+            email — требует email у должника.
+        debt_case_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: >
+            Список ID долговых дел для рассылки.
+            Если не указан — рассылка по всем делам в системе.
+          example: ["uuid1", "uuid2"]
+        variables:
+          type: object
+          additionalProperties:
+            type: string
+          description: >
+            Дополнительные переменные для шаблона (перезаписывают авто-переменные).
+            Применяются ко всем получателям рассылки.
+          example:
+            promo: "Акция: оплатите до 31 мая — скидка 10%"
+
+    BroadcastResult:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Всего обработано дел
+          example: 42
+        sent:
+          type: integer
+          description: Успешно отправлено
+          example: 40
+        failed:
+          type: integer
+          description: Ошибок отправки
+          example: 2
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              debtCaseId:
+                type: string
+                format: uuid
+              logId:
+                type: string
+                format: uuid
+              status:
+                type: string
+                enum: [sent, failed, queued]
+
+    # ── CHAT2DESK ──
+    Chat2DeskSendMessage:
+      type: object
+      required: [phone, text]
+      properties:
+        phone:
+          type: string
+          description: Номер телефона получателя в международном формате
+          example: "+996700123456"
+        text:
+          type: string
+          description: Текст WhatsApp-сообщения
+          example: "Добрый день! Напоминаем о задолженности."
+
+    Chat2DeskResult:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [sent, failed]
+        message_id:
+          type: integer
+          nullable: true
+          description: ID сообщения в Chat2Desk (при успешной отправке)
+        error:
+          type: string
+          nullable: true
 
     # ── SHARED ──
     Pagination:
