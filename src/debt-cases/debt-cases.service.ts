@@ -70,6 +70,11 @@ export class DebtCasesService {
     return this.caseRepo.save(c);
   }
 
+  async remove(id: string): Promise<void> {
+    const c = await this.findOne(id);
+    await this.caseRepo.remove(c);
+  }
+
   async getDpdHistory(id: string): Promise<DpdSnapshot[]> {
     await this.findOne(id);
     return this.dpdRepo.find({

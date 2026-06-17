@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -12,6 +15,7 @@ import {
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
@@ -77,6 +81,14 @@ export class DebtCasesController {
     @Body() dto: UpdateDebtCaseDto,
   ): Promise<DebtCase> {
     return this.service.update(id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Удалить дело' })
+  @ApiNoContentResponse()
+  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    return this.service.remove(id);
   }
 
   @Get(':id/dpd-history')

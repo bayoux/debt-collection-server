@@ -506,6 +506,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DebtCase"
+    delete:
+      tags: [DebtCases]
+      summary: Удалить дело
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Удалено
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /debt-cases/{id}/dpd-history/:
     parameters:
