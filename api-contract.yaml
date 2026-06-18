@@ -4,8 +4,13 @@ info:
   description: >
     Автоматизированная система управления дебиторской задолженностью
     с модулем омниканальных уведомлений (SMS / WhatsApp / Telegram / Email / Chat2Desk).
-    Chat2Desk — канал WhatsApp через API chat2desk.com. Токен задаётся переменной CHAT2DESK_API_TOKEN.
-  version: 1.1.0
+
+    **Каналы:**
+    - `sms` — Nikita SMSPro (nikita.kg). Переменные: NIKITA_LOGIN, NIKITA_PASSWORD, NIKITA_SENDER.
+    - `chat2desk` / `whatsapp` — WhatsApp через Chat2Desk API (chat2desk.com). Токен: CHAT2DESK_API_TOKEN.
+    - `telegram` — Telegram-бот. Токен: TELEGRAM_BOT_TOKEN.
+    - `email` — SMTP. Переменные: SMTP_HOST / SMTP_USER / SMTP_PASS.
+  version: 1.2.0
   contact:
     name: Dev Team
 
@@ -40,6 +45,8 @@ tags:
     description: Прямая отправка сообщений через Telegram-бота
   - name: Chat2Desk
     description: Отправка WhatsApp-сообщений через Chat2Desk API (chat2desk.com)
+  - name: Nikita
+    description: Отправка SMS через Nikita SMSPro API (nikita.kg)
 
 # ─────────────────────────────────────────
 # PATHS
@@ -651,9 +658,12 @@ paths:
       description: >
         Отправляет уведомление по выбранному каналу всем переданным долговым делам.
         Если debtCaseIds не указан — рассылка по всем делам в системе.
-        Для canal chat2desk использует whatsapp_number должника (или phone, если whatsapp_number не задан).
-        Для canal telegram — поле telegram_id должника.
-        Для canal email — поле email должника.
+
+        **Источник контактных данных по каналам:**
+        - `sms` — поле phone должника; SMS через Nikita SMSPro (nikita.kg).
+        - `chat2desk` / `whatsapp` — whatsapp_number должника (или phone, если не задан); WhatsApp через Chat2Desk.
+        - `telegram` — поле telegram_id должника.
+        - `email` — поле email должника.
       security:
         - BearerAuth: []
       requestBody:
@@ -1031,6 +1041,52 @@ paths:
                     type: string
                     example: "Chat2Desk connection OK"
 
+  # ── NIKITA SMSPRO ─────────────────────
+  /nikita/send/:
+    post:
+      tags: [Nikita]
+      summary: Отправить SMS напрямую через Nikita SMSPro
+      description: >
+        Низкоуровневый метод прямой отправки SMS. Для массовой рассылки по шаблону
+        используйте POST /notifications/broadcast с channel=sms.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NikitaSendMessage"
+      responses:
+        "200":
+          description: SMS отправлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NikitaResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /nikita/test/:
+    post:
+      tags: [Nikita]
+      summary: Проверить соединение с Nikita SMSPro (баланс)
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Результат проверки
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: "Nikita SMSPro OK — balance: 500.00 KGS (sender: Debt Collection)"
+
   # ── INTEGRATIONS ──────────────────────
   /integrations/:
     get:
@@ -1115,7 +1171,12 @@ paths:
                     type: boolean
                   message:
                     type: string
-                    example: "Connection to WhatsApp Ch2D OK"
+                    example: "Nikita SMSPro OK — balance: 500.00 KGS"
+                    description: >
+                      Для channel=sms — баланс Nikita SMSPro.
+                      Для channel=chat2desk/whatsapp — статус Chat2Desk.
+                      Для channel=telegram — имя бота.
+                      Для channel=email — SMTP статус.
 
 # ─────────────────────────────────────────
 # COMPONENTS
@@ -1864,6 +1925,7 @@ components:
           enum: [whatsapp, sms, telegram, email, chat2desk]
           description: >
             Канал рассылки.
+            sms — SMS через Nikita SMSPro (использует phone должника).
             chat2desk — WhatsApp через Chat2Desk API (использует whatsapp_number или phone должника).
             telegram — требует telegram_id у должника.
             email — требует email у должника.
@@ -1943,6 +2005,35 @@ components:
         error:
           type: string
           nullable: true
+
+    # ── NIKITA SMSPRO ──
+    NikitaSendMessage:
+      type: object
+      required: [phone, text]
+      properties:
+        phone:
+          type: string
+          description: Номер телефона в международном формате (цифры, без +)
+          example: "996700123456"
+        text:
+          type: string
+          description: Текст SMS (до 160 символов для одного SMS)
+          example: "Добрый день! Напоминаем о задолженности на сумму 5000 сом."
+
+    NikitaResult:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [sent, failed]
+        message_id:
+          type: string
+          nullable: true
+          description: ID сообщения в Nikita SMSPro (при успешной отправке)
+        error:
+          type: string
+          nullable: true
+          description: Описание ошибки (при status=failed)
 
     # ── SHARED ──
     Pagination:
