@@ -10,6 +10,7 @@ import { NotificationsController } from './notifications.controller';
 import { EmailModule } from '../email/email.module';
 import { TelegramModule } from '../telegram/telegram.module';
 import { Chat2DeskModule } from '../chat2desk/chat2desk.module';
+import { NikitaModule } from '../nikita/nikita.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { Chat2DeskModule } from '../chat2desk/chat2desk.module';
     EmailModule,
     TelegramModule,
     Chat2DeskModule,
+    NikitaModule,
   ],
   controllers: [NotificationsController],
   providers: [NotificationsService],

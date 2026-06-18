@@ -9,6 +9,7 @@ import { DebtCase } from '../debt-cases/entities/debt-case.entity';
 import { PtpRecord } from '../ptp/entities/ptp-record.entity';
 import { TelegramService } from '../telegram/telegram.service';
 import { Chat2DeskService } from '../chat2desk/chat2desk.service';
+import { NikitaService } from '../nikita/nikita.service';
 import {
   BroadcastNotificationDto,
   CreateNotificationTemplateDto,
@@ -38,6 +39,7 @@ export class NotificationsService {
     private readonly mailerService: MailerService,
     private readonly telegramService: TelegramService,
     private readonly chat2deskService: Chat2DeskService,
+    private readonly nikitaService: NikitaService,
   ) {}
 
   // ── Templates ─────────────────────────────────────────────
@@ -110,6 +112,8 @@ export class NotificationsService {
     } else if (dto.channel === 'chat2desk' || dto.channel === 'whatsapp') {
       // whatsapp is delivered via Chat2Desk
       await this.sendViaChat2Desk(log, template, debtCase, vars);
+    } else if (dto.channel === 'sms') {
+      await this.sendViaNikita(log, template, debtCase, vars);
     } else {
       await this.sendViaWebhook(log, template, dto, vars);
     }
@@ -166,6 +170,8 @@ export class NotificationsService {
         await this.sendViaTelegram(log, template, debtCase, vars);
       } else if (dto.channel === 'chat2desk' || dto.channel === 'whatsapp') {
         await this.sendViaChat2Desk(log, template, debtCase, vars);
+      } else if (dto.channel === 'sms') {
+        await this.sendViaNikita(log, template, debtCase, vars);
       } else {
         await this.sendViaWebhook(
           log,
@@ -271,6 +277,31 @@ export class NotificationsService {
 
     const text = this.interpolate(template.body, vars);
     const result = await this.chat2deskService.sendMessage(phone, text);
+
+    log.status = result.status;
+    log.responseRaw = result.error ?? String(result.messageId ?? '');
+    if (result.status === 'sent') log.sentAt = new Date();
+
+    await this.logRepo.save(log);
+  }
+
+  private async sendViaNikita(
+    log: NotificationLog,
+    template: NotificationTemplate,
+    debtCase: DebtCase | null,
+    vars: Record<string, string>,
+  ): Promise<void> {
+    const phone = debtCase?.debtor?.phone;
+
+    if (!phone) {
+      log.status = 'failed';
+      log.responseRaw = `Debtor has no phone for debt case ${log.debtCaseId}`;
+      await this.logRepo.save(log);
+      return;
+    }
+
+    const text = this.interpolate(template.body, vars);
+    const result = await this.nikitaService.sendMessage(phone, text);
 
     log.status = result.status;
     log.responseRaw = result.error ?? String(result.messageId ?? '');

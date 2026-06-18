@@ -14,6 +14,7 @@ import { ReportsModule } from './reports/reports.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { Chat2DeskModule } from './chat2desk/chat2desk.module';
+import { NikitaModule } from './nikita/nikita.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { Chat2DeskModule } from './chat2desk/chat2desk.module';
     IntegrationsModule,
     TelegramModule,
     Chat2DeskModule,
+    NikitaModule,
   ],
 })
 export class AppModule implements NestModule {

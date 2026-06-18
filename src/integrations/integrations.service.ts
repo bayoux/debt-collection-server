@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { IntegrationConfig } from './entities/integration-config.entity';
 import { CreateIntegrationConfigDto } from './dto/integration.dto';
+import { NikitaService } from '../nikita/nikita.service';
 
 @Injectable()
 export class IntegrationsService {
@@ -12,6 +13,7 @@ export class IntegrationsService {
     @InjectRepository(IntegrationConfig)
     private readonly repo: Repository<IntegrationConfig>,
     private readonly config: ConfigService,
+    private readonly nikitaService: NikitaService,
   ) {}
 
   async create(dto: CreateIntegrationConfigDto): Promise<IntegrationConfig> {
@@ -61,6 +63,8 @@ export class IntegrationsService {
       case 'chat2desk':
       case 'whatsapp':
         return this.testChat2Desk();
+      case 'sms':
+        return this.nikitaService.testConnection();
       default:
         return this.testWebhook(config);
     }
