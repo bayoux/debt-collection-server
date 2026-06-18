@@ -2,6 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { NormalizeBodyMiddleware } from './common/middleware/normalize-body.middleware';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
@@ -20,6 +21,7 @@ import { NikitaModule } from './nikita/nikita.module';
   imports: [
     // ── Config ──────────────────────────────────────────────
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    ScheduleModule.forRoot(),
 
     // ── Database ─────────────────────────────────────────────
     TypeOrmModule.forRootAsync({

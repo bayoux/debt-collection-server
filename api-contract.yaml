@@ -34,7 +34,10 @@ tags:
   - name: Notifications
     description: Шаблоны и логи уведомлений
   - name: Scheduler
-    description: Запланированные задачи рассылки
+    description: >
+      Планирование отправки уведомлений по дате и времени (до секунды).
+      Задача сохраняется со статусом `pending` и автоматически исполняется в течение 1 минуты
+      после наступления `scheduled_at`. После исполнения статус меняется на `sent` или `failed`.
   - name: PTP
     description: Обещания об оплате (Promise to Pay)
   - name: Reports
@@ -736,7 +739,11 @@ paths:
                 $ref: "#/components/schemas/PaginatedScheduledTasks"
     post:
       tags: [Scheduler]
-      summary: Создать задачу рассылки
+      summary: Запланировать отправку уведомления
+      description: >
+        Создаёт задачу со статусом `pending`. Cron-runner проверяет задачи каждую минуту
+        и автоматически отправляет уведомление, как только `scheduled_at` наступает.
+        `scheduled_at` должен быть в будущем (иначе 400).
       security:
         - BearerAuth: []
       requestBody:
@@ -752,6 +759,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ScheduledTask"
+        "400":
+          description: scheduled_at в прошлом или некорректный формат
 
   /scheduled-tasks/{id}/cancel/:
     parameters:
@@ -1670,13 +1679,23 @@ components:
           $ref: "#/components/schemas/NotificationTemplate"
         channel:
           type: string
-          enum: [whatsapp, sms, telegram, email, chat2desk]
+          enum: [sms, whatsapp, telegram, email, chat2desk]
         scheduled_at:
           type: string
           format: date-time
+          description: Запланированное время отправки (ISO 8601, до секунды)
+          example: "2026-06-19T09:30:45Z"
         task_status:
           type: string
           enum: [pending, sent, cancelled, failed]
+          description: >
+            pending — ожидает исполнения;
+            sent — отправлено;
+            cancelled — отменено вручную;
+            failed — ошибка при отправке
+        created_at:
+          type: string
+          format: date-time
 
     ScheduledTaskCreate:
       type: object
@@ -1685,15 +1704,23 @@ components:
         debt_case_id:
           type: string
           format: uuid
+          example: "eff19051-3926-4c33-b9dd-3973ee7c3774"
         template_id:
           type: string
           format: uuid
+          example: "d04d43ce-4dad-4fb5-b867-28cf15bcf427"
         channel:
           type: string
-          enum: [whatsapp, sms, telegram, email, chat2desk]
+          enum: [sms, whatsapp, telegram, email, chat2desk]
+          example: sms
         scheduled_at:
           type: string
           format: date-time
+          description: >
+            Дата и время отправки в формате ISO 8601 с точностью до секунды.
+            Должно быть в будущем. Cron-runner запускает отправку в течение 1 минуты
+            после наступления указанного времени.
+          example: "2026-06-19T09:30:45Z"
 
     PaginatedScheduledTasks:
       allOf:
