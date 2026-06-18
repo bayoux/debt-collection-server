@@ -428,6 +428,53 @@ paths:
           description: Удалено
 
   # ── DEBT CASES ────────────────────────
+  /debt-cases/import/:
+    post:
+      tags: [DebtCases]
+      summary: Массовый импорт должников и дел из CSV/Excel
+      description: |
+        Принимает файл `.csv` или `.xlsx`. Каждая строка создаёт должника (upsert по phone) и привязанное дело о задолженности.
+
+        **Порядок обработки строки:**
+        1. Валидация всех полей
+        2. Upsert должника по `phone` (создаётся, если не найден)
+        3. Создание debt case с расчётом DPD и DPD-снапшота
+
+        **Обязательные колонки:** `fullName`, `phone`, `amount`, `dueDate`
+
+        **Необязательные колонки:** `email`, `whatsappNumber`, `telegramId`, `assignedAgentId`
+
+        Заголовки принимаются в camelCase и snake_case (`dueDate` / `due_date`).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV или XLSX файл со списком должников
+      responses:
+        "200":
+          description: Импорт выполнен (частично или полностью)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportDebtCaseResult"
+        "400":
+          description: Файл не загружен или неподдерживаемый тип
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /debt-cases/:
     get:
       tags: [DebtCases]
@@ -1491,6 +1538,69 @@ components:
         snapshot_date:
           type: string
           format: date
+
+    ImportDebtCaseRow:
+      type: object
+      required: [full_name, phone, amount, due_date]
+      properties:
+        full_name:
+          type: string
+          example: Иванов Иван Иванович
+        phone:
+          type: string
+          example: "+996700123456"
+        email:
+          type: string
+          format: email
+          nullable: true
+        whatsapp_number:
+          type: string
+          nullable: true
+        telegram_id:
+          type: string
+          nullable: true
+        amount:
+          type: number
+          format: float
+          example: 15000.00
+        due_date:
+          type: string
+          format: date
+          example: "2025-05-31"
+        assigned_agent_id:
+          type: string
+          format: uuid
+          nullable: true
+
+    ImportDebtCaseError:
+      type: object
+      properties:
+        row:
+          type: integer
+          description: Номер строки в файле (начиная с 2, так как 1 — заголовок)
+          example: 5
+        field:
+          type: string
+          example: amount
+        message:
+          type: string
+          example: "amount must be a positive number"
+
+    ImportDebtCaseResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+          description: Количество успешно импортированных строк
+          example: 42
+        skipped:
+          type: integer
+          description: Количество пропущенных строк (ошибки валидации или БД)
+          example: 3
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportDebtCaseError"
 
     PaginatedDebtCases:
       allOf:

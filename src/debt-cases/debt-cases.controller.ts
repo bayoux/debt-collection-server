@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,10 +11,15 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiNoContentResponse,
   ApiOkResponse,
@@ -24,8 +30,19 @@ import {
 import { DebtCasesService } from './debt-cases.service';
 import { DebtCase } from './entities/debt-case.entity';
 import { DpdSnapshot } from './entities/dpd-snapshot.entity';
-import { CreateDebtCaseDto, UpdateDebtCaseDto } from './dto/debt-case.dto';
+import {
+  CreateDebtCaseDto,
+  ImportDebtCaseResultDto,
+  UpdateDebtCaseDto,
+} from './dto/debt-case.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+
+const ALLOWED_MIME_TYPES = [
+  'text/csv',
+  'application/csv',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+];
 
 @ApiTags('DebtCases')
 @ApiBearerAuth('access-token')
@@ -39,6 +56,33 @@ export class DebtCasesController {
   @ApiCreatedResponse({ type: DebtCase })
   create(@Body() dto: CreateDebtCaseDto): Promise<DebtCase> {
     return this.service.create(dto);
+  }
+
+  @Post('import')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({
+    summary: 'Массовый импорт должников и дел из CSV/Excel',
+    description:
+      'Колонки: fullName, phone, email (opt), whatsappNumber (opt), telegramId (opt), amount, dueDate (YYYY-MM-DD), assignedAgentId (opt)',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiOkResponse({ type: ImportDebtCaseResultDto })
+  async import(@UploadedFile() file: any): Promise<ImportDebtCaseResultDto> {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const mime = file.mimetype.toLowerCase();
+    if (!ALLOWED_MIME_TYPES.includes(mime)) {
+      throw new BadRequestException(
+        'Unsupported file type. Upload a .csv or .xlsx file',
+      );
+    }
+    return this.service.bulkImport(file.buffer, mime);
   }
 
   @Get()
